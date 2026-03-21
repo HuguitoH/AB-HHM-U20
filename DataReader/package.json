@@ -1,0 +1,23 @@
+{
+  "name": "datareader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "02-abstract-data-reader.js",
+  "scripts": {
+    "dev": "tsx src/02-abstract-data-reader.ts",
+    "build": "tsc -p .",
+    "start": "node dist/02-abstract-data-reader.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "fs": "^0.0.1-security"
+  }
+}

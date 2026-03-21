@@ -1,0 +1,3 @@
+## Ignorar el node_modules en todo el arbol de directorios
+node_modules/
+dist/

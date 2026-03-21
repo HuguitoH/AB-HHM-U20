@@ -1,0 +1,37 @@
+{
+  "name": "unit20-devcontainer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "workspaceFolder": "/app",
+  "mounts": [
+    // Montaje del proyecto
+    "source=${localWorkspaceFolder},target=/app,type=bind"
+    // (Linux) Montaje del directorio de claves ssh en el contenedor
+    //,"type=bind,source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,readonly"
+    // (Windows) Montaje del directorio de claves ssh en el contenedor
+    ,"type=bind,source=${localEnv:USERPROFILE}\\.ssh,target=/home/node/.ssh,readonly"
+  ],
+  "shutdownAction": "stopContainer",
+  // Extensiones de VSC que queremos en el contenedor
+  "extensions": [
+    "eamodio.gitlens",
+    "codezombiech.gitignore",
+    "yzhang.markdown-all-in-one",
+    "streetsidesoftware.code-spell-checker",
+    "wangeleile.link4md",
+    "davidanson.vscode-markdownlint",
+    "redhat.vscode-yaml",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "zxh404.vscode-proto3",
+    "eliostruyf.vscode-typescript-exportallmodules"
+  ],
+  // Puertos expuestos
+  "forwardPorts": [
+    3000
+  ],
+  // Usuario en el contenedor
+  "remoteUser": "node"
+}
