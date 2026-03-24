@@ -1,6 +1,7 @@
 import type { IDataFetcher } from "./interfaces/IDataFetcher.js";
 import type { RawApiResponse } from "./types/raw.js";
 import { BASE_URL } from "./config.js";
+import { NoDataAvailableError } from "./errors/NoDataAvailableError.js";
 
 /**
  * Fetches raw fuel price data from the Ministry REST API.
