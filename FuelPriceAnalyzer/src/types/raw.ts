@@ -2,7 +2,7 @@ export interface RawStationData {
     'C.P.': string;
     'Dirección': string;
     'Horario': string;
-    'Latitud': number;
+    'Latitud': string;
     'Localidad': string;
     'Longitud (WGS84)': string;
     'Municipio': string;
