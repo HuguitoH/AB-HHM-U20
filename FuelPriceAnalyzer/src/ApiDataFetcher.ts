@@ -19,11 +19,8 @@ export class ApiDataFetcher implements IDataFetcher {
         });
 
         if (!response.ok) {
-            if (response.status === 404) {
-                throw new Error(
-                    `No Data Available for ${date};` +
-                    `The Ministry API publishes data with a 1-2 day delay.`
-                );
+            if (response.status === 400) {
+                throw new NoDataAvailableError(date);
             }
             throw new Error(`API error: ${response.status} for URL: ${url}`);
         }
