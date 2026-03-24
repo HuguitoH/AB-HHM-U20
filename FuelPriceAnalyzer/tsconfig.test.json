@@ -2,7 +2,7 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    "rootDir": "./src",
+    // "rootDir": "./src",
     "outDir": "dist",
 
     // Environment Settings
@@ -12,7 +12,7 @@
     // "types": [],
     // For nodejs:
     // "lib": ["esnext"],
-    "types": ["node"],
+    "types": ["node", "jest"],
     // and npm install -D @types/node
 
     // Other Outputs
@@ -44,6 +44,12 @@
     "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "resolveJsonModule": true,
+  
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "types": ["node", "jest"]
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "tests/**/*"]
+}
 }

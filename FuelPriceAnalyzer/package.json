@@ -4,32 +4,35 @@
   "description": "Fuel price analyzer using Spain Ministry REST API",
   "main": "dist/index.js",
   "scripts": {
-    "dev":   "tsx src/index.ts",
+    "dev": "tsx src/index.ts",
     "build": "tsc -p .",
     "start": "node dist/index.js",
-    "test":  "node --experimental-vm-modules node_modules/.bin/jest"
+    "test": "node --experimental-vm-modules node_modules/.bin/jest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "devDependencies": {
-    "@types/node": "^25.4.0",
     "@types/jest": "^29.5.0",
-    "jest":        "^29.7.0",
-    "ts-jest":     "^29.2.0",
-    "tsx":         "^4.21.0",
-    "typescript":  "^5.9.3"
+    "@types/node": "^25.4.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   },
   "jest": {
-    "preset": "ts-jest/presets/default-esm",
-    "testEnvironment": "node",
-    "extensionsToTreatAsEsm": [".ts"],
-    "transform": {
-      "^.+\\.ts$": ["ts-jest", { "useESM": true }]
-    },
-    "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
-    }
+  "preset": "ts-jest/presets/default-esm",
+  "testEnvironment": "node",
+  "extensionsToTreatAsEsm": [".ts"],
+  "transform": {
+    "^.+\\.ts$": ["ts-jest", {
+      "useESM": true,
+      "tsconfig": "tsconfig.test.json"
+    }]
+  },
+  "moduleNameMapper": {
+    "^(\\.{1,2}/.*)\\.js$": "$1"
   }
+}
 }
