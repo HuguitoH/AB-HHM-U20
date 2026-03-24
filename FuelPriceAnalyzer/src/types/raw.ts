@@ -10,6 +10,7 @@ export interface RawStationData {
     'Latitud': string;
     'Localidad': string;
     'Longitud (WGS84)': string;
+    'Margen': string;
     'Municipio': string;
     'PrecioProducto': string;
     'Provincia': string;
