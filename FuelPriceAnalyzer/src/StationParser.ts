@@ -2,10 +2,17 @@ import type { IStationParser } from "./interfaces/IStationParser.js";
 import type { RawApiResponse, RawStationData } from "./types/raw.js";
 import type { Station } from "./types/station.js";
 
+/**
+ * Transforms raw API responses into clean Station objects.
+ *
+ * Single Responsibility Principle: only handles data transformation.
+ * No HTTP calls, no business logic, no side effects.
+ */
 export class StationParser implements IStationParser {
     parse(raw: RawApiResponse, productId: string, productName: string): Station[] {
         const date = this.parseDate(raw.Fecha);
 
+        // Stations with empty PrecioProducto do not sell this fuel — exclude them
         return raw.ListaEESSPrecio
             .filter(s => s.PrecioProducto !== '')
             .map(s => this.mapStation(s, productId, productName, date));
@@ -35,7 +42,7 @@ export class StationParser implements IStationParser {
         };
     }
 
-    // Transform "1.234,56" -> 1234.56
+    // Transform "1,859" -> 1.859 (Ministry API uses comma as decimal separator instead of period)
     parseSpanishFloat(value: string): number {
         const parsed = parseFloat(value.replace(',', '.'));
         if (isNaN(parsed)) throw new Error(`Invalid number format: ${value}`);

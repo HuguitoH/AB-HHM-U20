@@ -3,6 +3,13 @@ import { StationParser } from "./StationParser.js";
 import { StationRepository } from "./StationRepository.js";
 import { PROVINCES, PRODUCTS } from "./config.js";
 
+/**
+ * Entry point for the CLI
+ * Usage: npm run dev -- --date DD-MM-YYYY
+ * If --date is not provided, defaults to today. 
+ */
+
+
 function getTodayFormatted(): string {
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');

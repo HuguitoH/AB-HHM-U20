@@ -1,3 +1,8 @@
+/**
+ * Clean internal domain model for a fuel station.
+ * All numeric fields are proper numbers (comma decimal separator already parsed).
+ * All string fields are trimmed.
+ */
 export interface Station {
     id: string;
     name: string;

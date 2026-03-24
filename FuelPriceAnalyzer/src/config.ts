@@ -1,5 +1,8 @@
+// Base URL for the Ministry of Ecological Transition REST API.
 export const BASE_URL = 'https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes';
 
+// Provinces and products of interest for the company.
+// To add a new province or product, only this file needs to change (Open/Closed Principle).
 export const PROVINCES = [
     { name: 'Madrid', id: '28' },
     { name: 'A Coruña', id: '15' },
