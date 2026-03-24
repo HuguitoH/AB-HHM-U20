@@ -1,6 +1,6 @@
-import type { IStationParser } from "./interfaces/IStationParser.ts";
-import type { RawApiResponse, RawStationData } from "./types/raw.ts";
-import type { Station } from "./types/station.ts";
+import type { IStationParser } from "./interfaces/IStationParser.js";
+import type { RawApiResponse, RawStationData } from "./types/raw.js";
+import type { Station } from "./types/station.js";
 
 export class StationParser implements IStationParser {
     parse(raw: RawApiResponse, productId: string, productName: string): Station[] {
