@@ -2,6 +2,7 @@ import { ApiDataFetcher } from "./ApiDataFetcher.js";
 import { StationParser } from "./StationParser.js";
 import { StationRepository } from "./StationRepository.js";
 import { PROVINCES, PRODUCTS } from "./config.js";
+import { NoDataAvailableError } from "./errors/NoDataAvailableError.js";
 
 /**
  * Entry point for the CLI
@@ -34,27 +35,48 @@ async function main(): Promise<void> {
     const parser = new StationParser();
     const repository = new StationRepository(fetcher, parser);
 
+    let hasData = false;
+
     for (const province of PROVINCES) {
         for (const product of PRODUCTS) {
-            const stations = await repository.getByProvinceAndProduct(
-                date,
-                province.id,
-                product.id,
-                product.name
-            );
+            try {
+                const stations = await repository.getByProvinceAndProduct(
+                    date,
+                    province.id,
+                    product.id,
+                    product.name
+                );
 
-            console.log(`[${province.name} / ${product.name}]`);
-            console.log(`  Total stations: ${stations.length}`);
+                hasData = true;
+                console.log(`[${province.name} / ${product.name}]`);
+                console.log(`  Total stations: ${stations.length}`);
 
-            if (stations.length > 0) {
-                const first = stations[0];
-                console.log(`First: ${first?.name} | ${first?.address}  | ${first?.price} €/L`);
+                if (stations.length > 0) {
+                    const first = stations[0];
+                    console.log(`First: ${first?.name} | ${first?.address}  | ${first?.price} €/L`);
+                }
+
+                console.log('');
+
+            } catch (error) {
+                if (error instanceof NoDataAvailableError) {
+                } else {
+                    throw error;
+                }
             }
-
-            console.log('');
         }
     }
+
+    if (!hasData) {
+    console.error(
+        `No data available for ${date}.\n` +
+        `The Ministry API publishes data with a 1-2 day delay.\n` +
+        `Try: npm run dev -- --date DD-MM-YYYY`
+    );
+    process.exit(1);
+    }
 }
+
 
 main().catch(err => {
     console.error('Error:', err);
