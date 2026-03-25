@@ -1,7 +1,7 @@
 # Fuel Price Analyzer
 
 ![Milestone](https://img.shields.io/badge/milestone-1%20complete-brightgreen)
-![Tests](https://img.shields.io/badge/tests-6%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-11%20passed-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 ![Node](https://img.shields.io/badge/Node-24--alpine-green)
 ![License](https://img.shields.io/badge/license-ISC-lightgrey)
@@ -449,7 +449,8 @@ AB-HHM-U20/
 │   │       ├── station.ts          # Clean internal domain model
 │   │       └── stationStore.ts     # In-memory store type definition
 │   ├── tests/
-│   │   └── StationParser.test.ts   # Unit tests for StationParser
+│   │   ├── StationParser.test.ts   # Unit tests for StationParser
+│   │   └── StationLoader.test.ts   # Unit tests for StationLoader with mocks
 │   ├── package.json
 │   └── tsconfig.json
 ├── .gitignore
@@ -484,17 +485,28 @@ PASS  tests/StationParser.test.ts
   ✓ Propagates Fecha from root object to each station
   ✓ ParseSpanishFloat throws error on invalid number format
 
-Tests: 6 passed, 6 total
-```
-The test strategy for Milestone 1 focuses on `StationParser` as the primary
-unit under test. Since Milestone 1 covers data fetching and processing only,
-`StationParser` encapsulates all the relevant logic — parsing Spanish decimal
-formats, trimming whitespace, filtering empty prices, and propagating dates.
+PASS  tests/StationLoader.test.ts
+  ✓ Loads all province/product combinations into memory
+  ✓ Builds correct nested map structure
+  ✓ getStationsByProvinceAndProduct returns correct stations
+  ✓ Returns empty array for unknown province
+  ✓ Returns null when no data available
 
-`ApiDataFetcher`, `StationRepository` and `StationLoader` contain no data
-processing logic and interact with external services or depend on them, so
-they fall outside the scope of Milestone 1 testing. They will be covered
-with Jest mocks in subsequent milestones.
+Test Suites: 2 passed, 2 total
+Tests:       11 passed, 11 total
+```
+
+The test strategy for Milestone 1 covers two units:
+
+- `StationParser` — tested with real mock data, covering all data 
+  transformation logic: Spanish decimal parsing, whitespace trimming, 
+  empty price filtering and date propagation.
+- `StationLoader` — tested with a Jest mock of `IStationRepository`, 
+  verifying that the in-memory store is correctly built and that 
+  province/product lookups work as expected.
+
+`ApiDataFetcher` and `StationRepository` interact directly with external 
+services and will be covered with integration tests in subsequent milestones.
 
 ---
 
