@@ -66,7 +66,7 @@ classDiagram
 The software is delivered in three milestones:
 
 - **Milestone 1** — Fetch and parse fuel price data from the Ministry REST API
-  into typed data structures.
+  into typed data structures and load them into memory.
 - **Milestone 2** — Generate a daily report with average prices and top 5
   cheapest/most expensive stations per fuel and province.
 - **Milestone 3** — Generate bar charts showing average price per day of the
@@ -282,20 +282,21 @@ and **clean code** practices (Martin, 2009).
 
 ### SOLID principles applied
 
-| Principle                 | Application                                                                                                          |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **Single Responsibility** | `StationParser` only transforms data. `ApiDataFetcher` only handles HTTP. `StationRepository` only orchestrates.     |
-| **Open/Closed**           | Adding a new province or product only requires updating `config.ts`. No class needs to be modified.                  |
-| **Liskov Substitution**   | Any `IDataFetcher` implementation can replace `ApiDataFetcher` without breaking `StationRepository`.                 |
-| **Interface Segregation** | `IDataFetcher`, `IStationParser` and `IStationRepository` are kept small and focused — each exposes only one method. |
-| **Dependency Inversion**  | `StationRepository` depends on `IDataFetcher` and `IStationParser` interfaces, not on concrete implementations.      |
+| Principle                 | Application                                                                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Single Responsibility** | `StationParser` only transforms data. `ApiDataFetcher` only handles HTTP. `StationRepository` only orchestrates. `StationLoader` only builds the in-memory store.            |
+| **Open/Closed**           | Adding a new province or product only requires updating `config.ts`. No class needs to be modified.                                                                          |
+| **Liskov Substitution**   | Any `IDataFetcher` implementation can replace `ApiDataFetcher` without breaking `StationRepository`.                                                                         |
+| **Interface Segregation** | `IDataFetcher`, `IStationParser`, `IStationRepository` and `IStationLoader` are kept small and focused — each exposes only the methods it needs.                             |
+| **Dependency Inversion**  | `StationRepository` depends on `IDataFetcher` and `IStationParser`. `StationLoader` depends on `IStationRepository`. All depend on interfaces, not concrete implementations. |
+
 
 ### Clean code practices applied
 
 Following Martin (2009), the codebase applies:
 
 - **Meaningful names** — `parseSpanishFloat`, `NoDataAvailableError`,
-  `getByProvinceAndProduct` express intent without comments.
+  `getByProvinceAndProduct`, `getStationsByProvinceAndProduct`express intent without comments.
 - **Small functions** — each method does exactly one thing.
 - **No magic numbers** — all province and product IDs are named constants
   in `config.ts`.
@@ -317,6 +318,11 @@ classDiagram
         <<interface>>
         +getByProvinceAndProduct(date: string, provinceId: string, productId: string, productName: string) Promise~Station[]~
     }
+    class IStationLoader {
+        <<interface>>
+        +load(date: string) Promise~StationStore~
+        +getStationsByProvinceAndProduct(store: StationStore, provinceName: string, productName: string) Station[]
+    }
     class ApiDataFetcher {
         +fetch(date: string, provinceId: string, productId: string) Promise~RawApiResponse~
     }
@@ -330,6 +336,11 @@ classDiagram
         -fetcher: IDataFetcher
         -parser: IStationParser
         +getByProvinceAndProduct(date: string, provinceId: string, productId: string, productName: string) Promise~Station[]~
+    }
+    class StationLoader {
+        -repository: IStationRepository
+        +load(date: string) Promise~StationStore~
+        +getStationsByProvinceAndProduct(store: StationStore, provinceName: string, productName: string) Station[]
     }
     class RawApiResponse {
         <<interface>>
@@ -357,6 +368,10 @@ classDiagram
         +lon: number
         +date: Date
     }
+    class StationStore {
+        <<type>>
+        Map~string, Map~string, Station[]~~
+    }
     class NoDataAvailableError {
         <<exception>>
         +name: string
@@ -366,32 +381,45 @@ classDiagram
     IStationRepository <|.. StationRepository : implements
     IDataFetcher <|.. ApiDataFetcher : implements
     IStationParser <|.. StationParser : implements
+    IStationLoader <|.. StationLoader : implements
     StationRepository "1" --> "1" IDataFetcher : uses
     StationRepository "1" --> "1" IStationParser : uses
+    StationLoader "1" --> "1" IStationRepository : uses
+    StationLoader ..> StationStore : produces
     ApiDataFetcher ..> RawApiResponse : returns
     ApiDataFetcher ..> NoDataAvailableError : throws
     StationParser ..> Station : produces
     StationParser ..> RawApiResponse : reads
     RawApiResponse "1" *-- "0..*" RawStation : contains
+    StationStore "1" *-- "0..*" Station : contains
 ```
 
 ### Data flow
 ```
 CLI (index.ts)
     │
-    └── StationRepository.getByProvinceAndProduct(date, provinceId, productId)
+    └── StationLoader.load(date)
             │
-            ├── ApiDataFetcher.fetch()  →  GET Ministry REST API
-            │       └── RawApiResponse (JSON)
+            └── para cada provincia × producto (8 combinaciones):
+                  └── StationRepository.getByProvinceAndProduct()
+                        ├── ApiDataFetcher.fetch() → GET Ministry REST API
+                        │       └── RawApiResponse (JSON)
+                        └── StationParser.parse()
+                                ├── filter: remove stations with empty PrecioProducto
+                                ├── map: RawStation → Station
+                                │     ├── parseSpanishFloat("1,859") → 1.859
+                                │     ├── parseSpanishFloat("40,528") → 40.528
+                                │     ├── trim("AJALVIR   ") → "AJALVIR"
+                                │     └── parseDate("21/03/2026 0:00:00") → Date
+                                └── Station[]
             │
-            └── StationParser.parse()
-                    ├── filter: remove stations with empty PrecioProducto
-                    ├── map: RawStation → Station
-                    │     ├── parseSpanishFloat("1,859") → 1.859
-                    │     ├── parseSpanishFloat("40,528") → 40.528
-                    │     ├── trim("AJALVIR   ") → "AJALVIR"
-                    │     └── parseDate("21/03/2026 0:00:00") → Date
-                    └── Station[]
+            └── StationStore (in-memory)
+                  {
+                    "Madrid"   → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] },
+                    "A Coruña" → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] },
+                    "Tenerife" → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] },
+                    "Badajoz"  → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] }
+                  }
 ```
 
 ---
@@ -400,7 +428,7 @@ CLI (index.ts)
 ```
 AB-HHM-U20/
 ├── .devcontainer/                  # Docker + VSCode container config
-├── DataReader/                     # Base example provided (unmodified)
+├── DataReader/                     # Base example provided by MSMK (unmodified)
 ├── FuelPriceAnalyzer/              # Main project
 │   ├── src/
 │   │   ├── index.ts                # CLI entry point
@@ -408,15 +436,18 @@ AB-HHM-U20/
 │   │   ├── ApiDataFetcher.ts       # REST API client (HTTP only)
 │   │   ├── StationParser.ts        # JSON → Station[] transformer
 │   │   ├── StationRepository.ts    # Orchestrator
+│   │   ├── StationLoader.ts        # In-memory StationStore builder
 │   │   ├── errors/
 │   │   │   └── NoDataAvailableError.ts  # Custom error for API 400 responses
 │   │   ├── interfaces/
 │   │   │   ├── IDataFetcher.ts
 │   │   │   ├── IStationParser.ts
-│   │   │   └── IStationRepository.ts
+│   │   │   ├── IStationRepository.ts
+│   │   │   └── IStationLoader.ts
 │   │   └── types/
 │   │       ├── raw.ts              # Raw API response types
-│   │       └── station.ts          # Clean internal domain model
+│   │       ├── station.ts          # Clean internal domain model
+│   │       └── stationStore.ts     # In-memory store type definition
 │   ├── tests/
 │   │   └── StationParser.test.ts   # Unit tests for StationParser
 │   ├── package.json
@@ -460,9 +491,10 @@ unit under test. Since Milestone 1 covers data fetching and processing only,
 `StationParser` encapsulates all the relevant logic — parsing Spanish decimal
 formats, trimming whitespace, filtering empty prices, and propagating dates.
 
-`ApiDataFetcher` and `StationRepository` contain no data processing logic and
-interact with external services, so they fall outside the scope of Milestone 1
-testing. They will be covered with Jest mocks in subsequent milestones.
+`ApiDataFetcher`, `StationRepository` and `StationLoader` contain no data
+processing logic and interact with external services or depend on them, so
+they fall outside the scope of Milestone 1 testing. They will be covered
+with Jest mocks in subsequent milestones.
 
 ---
 
