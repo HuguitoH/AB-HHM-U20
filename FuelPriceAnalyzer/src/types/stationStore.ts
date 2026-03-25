@@ -1,4 +1,4 @@
-import { Station } from '../types/station.js';
+import type { Station } from '../types/station.js';
 
 /**
  * In-memory store for all fetched station data.
