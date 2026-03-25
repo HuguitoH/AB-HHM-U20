@@ -26,6 +26,7 @@ practices (Martin, 2009) applied throughout the codebase.
   - [Testing](#testing)
     - [Writing new tests](#writing-new-tests)
     - [Testing strategy](#testing-strategy)
+  - [| `StationRepository` | Integration test (future) | Depends on `IDataFetcher` and `IStationParser` |](#-stationrepository--integration-test-future--depends-on-idatafetcher-and-istationparser-)
   - [Contribution Workflow](#contribution-workflow)
   - [Commit Guidelines](#commit-guidelines)
   - [References](#references)
@@ -155,7 +156,7 @@ All contributions must respect the SOLID principles applied in this project
 
 | Principle                 | Requirement                                                                                                                       |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Single Responsibility** | Each class must have exactly one reason to change. Do not add HTTP logic to `StationParser` or parsing logic to `ApiDataFetcher`. |
+| **Single Responsibility** | Each class must have exactly one reason to change. Do not add HTTP logic to `StationParser`, parsing logic to `ApiDataFetcher`, or store-building logic outside `StationLoader`. |
 | **Open/Closed**           | Extend behaviour through new classes or config changes, not by modifying existing classes.                                        |
 | **Liskov Substitution**   | Any new implementation of `IDataFetcher` or `IStationParser` must be fully interchangeable with the existing ones.                |
 | **Interface Segregation** | Keep interfaces small and focused. Do not add unrelated methods to existing interfaces.                                           |
@@ -202,9 +203,9 @@ test('parses PrecioProducto string with comma to number', () => {
 | Class               | Test type                 | Reason                                         |
 | ------------------- | ------------------------- | ---------------------------------------------- |
 | `StationParser`     | Unit test                 | Pure logic, no external dependencies           |
+| `StationLoader`     | Unit test with Jest mocks | Depends on `IStationRepository` — mocked       |
 | `ApiDataFetcher`    | Integration test (future) | Depends on Ministry REST API                   |
 | `StationRepository` | Integration test (future) | Depends on `IDataFetcher` and `IStationParser` |
-
 ---
 
 ## Contribution Workflow
