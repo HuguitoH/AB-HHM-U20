@@ -1,7 +1,7 @@
 import { ApiDataFetcher } from "./ApiDataFetcher.js";
 import { StationParser } from "./StationParser.js";
 import { StationRepository } from "./StationRepository.js";
-import { StationLoader } from "./StationStore.js";
+import { StationLoader } from "./StationLoader.js";
 import { PROVINCES, PRODUCTS } from "./config.js";
 
 /**
