@@ -26,7 +26,6 @@ practices (Martin, 2009) applied throughout the codebase.
   - [Testing](#testing)
     - [Writing new tests](#writing-new-tests)
     - [Testing strategy](#testing-strategy)
-  - [| `StationRepository` | Integration test (future) | Depends on `IDataFetcher` and `IStationParser` |](#-stationrepository--integration-test-future--depends-on-idatafetcher-and-istationparser-)
   - [Contribution Workflow](#contribution-workflow)
   - [Commit Guidelines](#commit-guidelines)
   - [References](#references)
@@ -52,12 +51,14 @@ practices (Martin, 2009) applied throughout the codebase.
 ## Getting Started
 
 1. Clone the repository:
+
 ```bash
 git clone git@github.com:HuguitoH/AB-HHM-U20.git
 cd AB-HHM-U20
 ```
 
 2. Open in VSCode and reopen in the Dev Container:
+
 ```bash
 code .
 ```
@@ -67,11 +68,13 @@ code .
 > `Dev Containers: Reopen in Container` manually.
 
 3. Navigate to the project folder:
+
 ```bash
 cd FuelPriceAnalyzer
 ```
 
 4. Verify everything works before making any changes:
+
 ```bash
 npm test
 npm run dev -- --date 21-03-2026
@@ -134,13 +137,14 @@ Following Martin (2009), all names must express intent clearly:
 
 The project follows the **Open/Closed Principle** (Martin, 2003) — to add a
 new province or product, only `src/config.ts` needs to be modified:
+
 ```typescript
 export const PROVINCES = [
-  { name: 'Madrid',   id: '28' },
-  { name: 'A Coruña', id: '15' },
-  { name: 'Tenerife', id: '38' },
-  { name: 'Badajoz',  id: '06' },
-  { name: 'Sevilla',  id: '41' }, // ← add here only
+  { name: "Madrid", id: "28" },
+  { name: "A Coruña", id: "15" },
+  { name: "Tenerife", id: "38" },
+  { name: "Badajoz", id: "06" },
+  { name: "Sevilla", id: "41" }, // ← add here only
 ] as const;
 ```
 
@@ -154,13 +158,13 @@ export const PROVINCES = [
 All contributions must respect the SOLID principles applied in this project
 (Martin, 2003):
 
-| Principle                 | Requirement                                                                                                                       |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Principle                 | Requirement                                                                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Single Responsibility** | Each class must have exactly one reason to change. Do not add HTTP logic to `StationParser`, parsing logic to `ApiDataFetcher`, or store-building logic outside `StationLoader`. |
-| **Open/Closed**           | Extend behaviour through new classes or config changes, not by modifying existing classes.                                        |
-| **Liskov Substitution**   | Any new implementation of `IDataFetcher` or `IStationParser` must be fully interchangeable with the existing ones.                |
-| **Interface Segregation** | Keep interfaces small and focused. Do not add unrelated methods to existing interfaces.                                           |
-| **Dependency Inversion**  | New classes must depend on interfaces, not on concrete implementations.                                                           |
+| **Open/Closed**           | Extend behaviour through new classes or config changes, not by modifying existing classes.                                                                                       |
+| **Liskov Substitution**   | Any new implementation of `IDataFetcher` or `IStationParser` must be fully interchangeable with the existing ones.                                                               |
+| **Interface Segregation** | Keep interfaces small and focused. Do not add unrelated methods to existing interfaces.                                                                                          |
+| **Dependency Inversion**  | New classes must depend on interfaces, not on concrete implementations.                                                                                                          |
 
 > [!IMPORTANT]
 > All contributions must follow SOLID principles. A pull request that
@@ -173,6 +177,7 @@ All contributions must respect the SOLID principles applied in this project
 
 All contributions must include tests. Run the full test suite before opening
 a pull request (Meta Platforms, 2026):
+
 ```bash
 npm test
 ```
@@ -191,24 +196,33 @@ npm test
   services must use Jest mocks.
 
 Example of a well-structured test:
+
 ```typescript
-test('parses PrecioProducto string with comma to number', () => {
-  const [station] = parser.parse(mockRaw, '1', 'Gasolina 95 E5');
+test("parses PrecioProducto string with comma to number", () => {
+  const [station] = parser.parse(mockRaw, "1", "Gasolina 95 E5");
   expect(station?.price).toBe(1.859);
 });
 ```
 
 ### Testing strategy
 
-| Class               | Test type                 | Reason                                         |
-| ------------------- | ------------------------- | ---------------------------------------------- |
-| `StationParser`     | Unit test                 | Pure logic, no external dependencies           |
-| `StationLoader`     | Unit test with Jest mocks | Depends on `IStationRepository` — mocked       |
-| `ApiDataFetcher`    | Integration test (future) | Depends on Ministry REST API                   |
-| `StationRepository` | Integration test (future) | Depends on `IDataFetcher` and `IStationParser` |
+| Class                  | Test type                 | Reason                                           |
+| ---------------------- | ------------------------- | ------------------------------------------------ |
+| `StationParser`        | Unit test                 | Pure logic, no external dependencies             |
+| `StationLoader`        | Unit test with Jest mocks | Depends on `IStationRepository` — mocked         |
+| `ReportGenerator`      | Unit test                 | Pure calculation logic, no external dependencies |
+| `ReportFormatter`      | Unit test                 | Pure formatting logic, no external dependencies  |
+| `Config`               | Unit test                 | Singleton behaviour verification                 |
+| `AnalyzerFactory`      | Unit test                 | Factory method contract verification             |
+| `NoDataAvailableError` | Unit test                 | Custom error class verification                  |
+| `ApiDataFetcher`       | Integration test (future) | Depends on Ministry REST API                     |
+| `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`   |
+| `ReportWriter`         | Integration test (future) | Depends on file system                           |
+
 ---
 
 ## Contribution Workflow
+
 ```mermaid
 graph LR
     A[Clone / Branch] --> B[Make changes]
@@ -226,6 +240,7 @@ graph LR
 
 This project follows the **Conventional Commits** specification
 (Conventional Commits, 2024). Every commit must follow this format:
+
 ```
 <type>(<scope>): <short description in imperative>
 ```
@@ -242,6 +257,7 @@ This project follows the **Conventional Commits** specification
 | `chore`    | Config, dependencies, tooling        |
 
 **Examples:**
+
 ```
 feat(parser): add trim for trailing whitespace in locality field
 fix(fetcher): handle 503 response from Ministry API
@@ -265,18 +281,22 @@ chore(deps): update jest to 29.7.0
 
 ## References
 
-Conventional Commits (2024) *Conventional Commits specification v1.0.0*.
+Conventional Commits (2024) _Conventional Commits specification v1.0.0_.
 Available at: https://www.conventionalcommits.org (Accessed: 25 March 2026).
 
-Martin, R.C. (2003) *Agile Software Development: Principles, Patterns, and
-Practices*. Upper Saddle River: Prentice Hall.
+Martin, R.C. (2003) _Agile Software Development: Principles, Patterns, and
+Practices_. Upper Saddle River: Prentice Hall.
 
-Martin, R.C. (2009) *Clean Code: A Handbook of Agile Software Craftsmanship*.
+Martin, R.C. (2009) _Clean Code: A Handbook of Agile Software Craftsmanship_.
 Upper Saddle River: Prentice Hall.
 
-Meta Platforms (2026) *Jest: JavaScript Testing Framework*. Available at:
+Meta Platforms (2026) _Jest: JavaScript Testing Framework_. Available at:
 https://jestjs.io/docs/getting-started (Accessed: 25 March 2026).
 
-Microsoft (2026) *Dev Containers documentation*. Available at:
+Microsoft (2026) _Dev Containers documentation_. Available at:
 https://code.visualstudio.com/docs/devcontainers/containers
 (Accessed: 25 March 2026).
+
+Gamma, E., Helm, R., Johnson, R. and Vlissides, J. (1994) _Design Patterns:
+Elements of Reusable Object-Oriented Software_. Reading: Addison-Wesley
+Professional.
