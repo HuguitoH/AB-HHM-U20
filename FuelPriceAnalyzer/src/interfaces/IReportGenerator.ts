@@ -1,4 +1,4 @@
-import type { ReportData } from "../types/report.js";
+import type { ReportData, ReportMode } from "../types/report.js";
 import type { StationStore } from "../types/stationStore.js";
 
 /**
@@ -7,7 +7,5 @@ import type { StationStore } from "../types/stationStore.js";
  * not on the concrete ReportGenerator implementation.
  */
 export interface IReportGenerator {
-  generate(store: StationStore, date: string): ReportData;
+  generate(store: StationStore, date: string, mode: ReportMode): ReportData;
 }
-
-

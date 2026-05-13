@@ -6,4 +6,5 @@ import type { ReportData } from "../types/report.js";
  */
 export interface IReportFormatter {
   format(data: ReportData): string;
+  formatPages(data: ReportData): string[];
 }
