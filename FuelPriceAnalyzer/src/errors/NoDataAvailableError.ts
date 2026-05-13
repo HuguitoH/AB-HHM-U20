@@ -4,12 +4,12 @@
  * as the API publishes data with a 1-2 day delay.
  */
 export class NoDataAvailableError extends Error {
-    
-    constructor(date: string) {
+  constructor(date: string) {
     super(
-        `No data available for ${date}. ` +
-        `The Ministry API publishes data with a 1-2 day delay.`
+      `No data available for ${date}. ` +
+        `The Ministry API publishes data with a 1-2 day delay.`,
     );
-        this.name = 'NoDataAvailableError';
-    }
+    this.name = "NoDataAvailableError";
+    Object.setPrototypeOf(this, NoDataAvailableError.prototype);
+  }
 }
