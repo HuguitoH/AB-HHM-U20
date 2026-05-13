@@ -1,7 +1,7 @@
 # Fuel Price Analyzer
 
-![Milestone](https://img.shields.io/badge/milestone-1%20complete-brightgreen)
-![Tests](https://img.shields.io/badge/tests-11%20passed-brightgreen)
+![Milestone](https://img.shields.io/badge/milestone-2%20complete-brightgreen)
+![Tests](https://img.shields.io/badge/tests-49%20passed-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 ![Node](https://img.shields.io/badge/Node-24--alpine-green)
 ![License](https://img.shields.io/badge/license-ISC-lightgrey)
@@ -24,6 +24,9 @@ market intelligence for a fuel distribution company.
   - [Quick Start](#quick-start)
   - [Installation](#installation)
   - [Usage](#usage)
+    - [Summary mode](#summary-mode)
+    - [Report mode](#report-mode)
+    - [Save report to file](#save-report-to-file)
   - [Data Source](#data-source)
     - [Endpoints used](#endpoints-used)
     - [JSON response structure](#json-response-structure)
@@ -31,10 +34,12 @@ market intelligence for a fuel distribution company.
   - [Architecture](#architecture)
     - [SOLID principles applied](#solid-principles-applied)
     - [Clean code practices applied](#clean-code-practices-applied)
+    - [Design patterns applied](#design-patterns-applied)
     - [UML Diagram](#uml-diagram)
     - [Data flow](#data-flow)
   - [Project Structure](#project-structure)
   - [Testing](#testing)
+    - [Test strategy](#test-strategy)
   - [References](#references)
 
 ---
@@ -43,24 +48,23 @@ market intelligence for a fuel distribution company.
 
 This project is developed for the IT department of a fuel distribution company
 that operates several service stations across Spain. The company requires
-software to process fuel price data published by the *Ministerio para la
-Transición Ecológica y el Reto Demográfico*, in order to support pricing
+software to process fuel price data published by the _Ministerio para la
+Transición Ecológica y el Reto Demográfico_, in order to support pricing
 policy decisions and market analysis (Ministerio para la Transición Ecológica
 y el Reto Demográfico, 2026).
 
 The company has presence in the following provinces and fuel types:
-```mermaid 
-classDiagram
-    class ProvinciasCubiertas {
-        Madrid : 28
-        A_Coruña : 15
-        Tenerife : 38
-        Badajoz : 06
-    }
-    class CombustiblesCubiertos {
-        Gasolina_95_E5 : 1
-        Gasoleo_A_habitual : 4
-    }
+
+```mermaid
+graph TD
+    A[Company Coverage] --> B[Provinces]
+    A --> C[Fuels]
+    B --> D[Madrid — ID 28]
+    B --> E[A Coruña — ID 15]
+    B --> F[Tenerife — ID 38]
+    B --> G[Badajoz — ID 06]
+    C --> H[Gasolina 95 E5 — ID 1]
+    C --> I[Gasóleo A habitual — ID 4]
 ```
 
 The software is delivered in three milestones:
@@ -87,25 +91,29 @@ Dev Container, which is based on `node:24-alpine`.
 
 ## Quick Start
 
-| Command                            | Description                   |
-| ---------------------------------- | ----------------------------- |
-| `npm run dev -- --date 21-03-2026` | Run for a specific date       |
-| `npm run dev`                      | Run for today                 |
-| `npm run build`                    | Compile TypeScript to `dist/` |
-| `npm start -- --date 21-03-2026`   | Run compiled version          |
-| `npm test`                         | Run test suite                |
+| Command                                                   | Description                         |
+| --------------------------------------------------------- | ----------------------------------- |
+| `npm run dev -- --date 21-03-2026`                        | Summary mode — stations loaded      |
+| `npm run dev`                                             | Summary mode for today              |
+| `npm run dev -- --date 21-03-2026 --report`               | Full report with averages and top 5 |
+| `npm run dev -- --date 21-03-2026 --report --save-report` | Report + save to `reports/`         |
+| `npm run build`                                           | Compile TypeScript to `dist/`       |
+| `npm start -- --date 21-03-2026`                          | Run compiled version                |
+| `npm test`                                                | Run test suite                      |
 
 ---
 
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone git@github.com:HuguitoH/AB-HHM-U20.git
 cd AB-HHM-U20
 ```
 
 2. Open the project in VSCode:
+
 ```bash
 code .
 ```
@@ -125,53 +133,98 @@ code .
 > If you get a "No data available" message, try with a recent past date.
 
 Navigate to the project folder inside the container:
+
 ```bash
 cd FuelPriceAnalyzer
 ```
 
-Run for a specific date:
+### Summary mode
+
+Shows a quick overview of loaded stations per province and fuel type:
+
 ```bash
-npm run dev -- --date 21-03-2026
+npm run dev -- --date 12-05-2026
 ```
 
 Expected output:
+
 ```
-Fuel Price Analyzer — date: 21-03-2026
+Fuel Price Analyzer — date: 12-05-2026
 
 [Madrid / Gasolina 95 E5]
-  Total stations: 850
-  First: REPSOL | CARRETERA M-114 KM. 1 | 1.859 €/L
+  Total stations: 851
+  First: REPSOL | CARRETERA M-114 KM. 0,7 | 1.595 €/L
 
 [Madrid / Gasóleo A habitual]
-  Total stations: 856
-  First: REPSOL | CARRETERA M-114 KM. 1 | 1.999 €/L
-
-[A Coruña / Gasolina 95 E5]
-  Total stations: 281
-  First: PETROPRIX | CARRETERA AC-542 KM. 10 | 1.668 €/L
-
-[A Coruña / Gasóleo A habitual]
-  Total stations: 284
-  First: PETROPRIX | CARRETERA AC-542 KM. 10 | 1.848 €/L
-
-[Tenerife / Gasolina 95 E5]
-  Total stations: 240
-  First: GMOIL | CALLE CHARFA ESQUINA AVENIDA LAS PALMITAS, S/N | 1.299 €/L
-
-[Tenerife / Gasóleo A habitual]
-  Total stations: 239
-  First: BP COOP SAN SEBASTIAN | CALLE CHARFA, 28 | 1.369 €/L
-
-[Badajoz / Gasolina 95 E5]
-  Total stations: 236
-  First: CAMPSA | C-423 km 40,6 | 1.809 €/L
-
-[Badajoz / Gasóleo A habitual]
-  Total stations: 277
-  First: COOP.GUADALPERALES | PLAZA DE LA IGLESIA, S/N | 1.882 €/L
+  Total stations: 857
+  First: REPSOL | CARRETERA M-114 KM. 0,7 | 1.719 €/L
+...
 ```
 
+### Report mode
+
+Generates a full paginated report with average prices and top 5 cheapest/most
+expensive stations. An interactive mode selector is shown before the report:
+
+```bash
+npm run dev -- --date 12-05-2026 --report
+```
+
+```
+  Report mode:
+  [1] All stations (includes highways)
+  [2] Exclude highway stations
+
+  Select [1/2]:
+```
+
+The report is then displayed page by page:
+
+```
+============================================================
+  FUEL PRICE REPORT — 12-05-2026
+  Mode: All stations
+============================================================
+
+>>> Madrid / Gasolina 95 E5
+------------------------------------------------------------
+  Average price: 1.553 €/L
+
+  ▼ Top 5 cheapest:
+    1. PLENERGY                       1.365 €/L — CAMINO DEL OLIVO, 1, MECO
+    2. GASEXPRESS                     1.369 €/L — CARRETERA DAGANZO KM. 3, ALCALA DE HENARES
+    3. ALCAMPO                        1.369 €/L — C.C. LA DEHESA, ALCALA DE HENARES
+    4. PETROPRIX                      1.369 €/L — CALLE ISAAC NEWTON, 155, ALCALA DE HENARES
+    5. SUPECO                         1.369 €/L — POLIGONO LA GARENA, ALCALA DE HENARES
+
+  ▲ Top 5 most expensive:
+    1. COMERCIAL SAMA                 1.859 €/L — CALLE ANTONIO LÓPEZ, 8, MADRID
+    2. REPSOL                         1.759 €/L — CARRETERA R-5 KM. 5,5, LEGANES
+    ...
+
+  Page 1/8
+  [ENTER] next   [B] back   [Q] quit
+```
+
+Navigation:
+
+- `ENTER` or `→` — next page
+- `B` or `←` — previous page
+- `Q` or `Ctrl+C` — quit
+
+### Save report to file
+
+Add `--save-report` to save the report as a `.txt` file in `reports/`:
+
+```bash
+npm run dev -- --date 12-05-2026 --report --save-report
+```
+
+Files are saved as `reports/report-DD-MM-YYYY-all.txt` or
+`reports/report-DD-MM-YYYY-no-highway.txt` depending on the selected mode.
+
 If the requested date has no data yet:
+
 ```
 Fuel Price Analyzer — date: 24-03-2026
 
@@ -195,6 +248,7 @@ confirmed by the API documentation (Ministerio para la Transición Ecológica
 y el Reto Demográfico, 2026).
 
 Full API documentation:
+
 ```
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/help
 ```
@@ -202,30 +256,35 @@ https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/
 ### Endpoints used
 
 **Historical prices by province and product:**
+
 ```
 GET /EstacionesTerrestresHist/FiltroProvinciaProducto/{FECHA}/{IDProvincia}/{IDProducto}
 ```
 
-Example — Madrid, Gasolina 95 E5, 21 March 2026:
+Example — Madrid, Gasolina 95 E5, 12 May 2026:
+
 ```
-https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/EstacionesTerrestresHist/FiltroProvinciaProducto/21-03-2026/28/1
+https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/EstacionesTerrestresHist/FiltroProvinciaProducto/12-05-2026/28/1
 ```
+
 ```mermaid
 graph LR
-    A[Cliente] -- "GET /21-03-2026/28/1" --> B((API Ministerio))
-    B -- "Respuesta JSON" --> A
+    A[CLI] -- "GET /12-05-2026/28/1" --> B((API Ministerio))
+    B -- "JSON Response" --> A
 ```
 
 **Province and product ID lookup:**
+
 ```
 GET /Listados/Provincias/
 GET /Listados/ProductosPetroliferos/
 ```
 
 ### JSON response structure
+
 ```json
 {
-  "Fecha": "21/03/2026 0:00:00",
+  "Fecha": "12/05/2026 0:00:00",
   "ListaEESSPrecio": [
     {
       "C.P.": "28864",
@@ -235,7 +294,7 @@ GET /Listados/ProductosPetroliferos/
       "Localidad": "AJALVIR",
       "Longitud (WGS84)": "-3,480944",
       "Municipio": "Ajalvir",
-      "PrecioProducto": "1,859",
+      "PrecioProducto": "1,595",
       "Provincia": "MADRID",
       "Rótulo": "REPSOL",
       "IDEESS": "3119",
@@ -251,7 +310,7 @@ GET /Listados/ProductosPetroliferos/
 **Parsing notes:**
 
 - `PrecioProducto`, `Latitud` and `Longitud` use **comma as decimal separator**
-  and must be converted to `number` (e.g. `"1,859"` → `1.859`).
+  and must be converted to `number` (e.g. `"1,595"` → `1.595`).
 - `Localidad` may contain **trailing whitespace** and must be trimmed.
 - Stations with an **empty `PrecioProducto`** do not sell that fuel and
   must be filtered out before processing.
@@ -272,40 +331,76 @@ GET /Listados/ProductosPetroliferos/
   (missing second `r`) — this is a known bug in the Ministry API.
 - Numeric fields use **comma as decimal separator** instead of period, which
   is non-standard JSON.
+- Some physical stations are registered as **multiple entries** with different
+  IDs but identical address and locality — these are deduplicated before
+  report generation.
 
 ---
 
 ## Architecture
 
-The project is designed following the **SOLID principles** (Martin, 2003)
-and **clean code** practices (Martin, 2009).
+The project is designed following the **SOLID principles** (Martin, 2003),
+**clean code** practices (Martin, 2009), and **design patterns** (Gamma et
+al., 1994).
 
 ### SOLID principles applied
 
-| Principle                 | Application                                                                                                                                                                  |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Single Responsibility** | `StationParser` only transforms data. `ApiDataFetcher` only handles HTTP. `StationRepository` only orchestrates. `StationLoader` only builds the in-memory store.            |
-| **Open/Closed**           | Adding a new province or product only requires updating `config.ts`. No class needs to be modified.                                                                          |
-| **Liskov Substitution**   | Any `IDataFetcher` implementation can replace `ApiDataFetcher` without breaking `StationRepository`.                                                                         |
-| **Interface Segregation** | `IDataFetcher`, `IStationParser`, `IStationRepository` and `IStationLoader` are kept small and focused — each exposes only the methods it needs.                             |
-| **Dependency Inversion**  | `StationRepository` depends on `IDataFetcher` and `IStationParser`. `StationLoader` depends on `IStationRepository`. All depend on interfaces, not concrete implementations. |
-
+| Principle                 | Application                                                                                                                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Single Responsibility** | `StationParser` only transforms data. `ApiDataFetcher` only handles HTTP. `StationRepository` only orchestrates. `StationLoader` only builds the in-memory store. `ReportGenerator` only calculates. `ReportFormatter` only formats. `ReportWriter` only writes to file. |
+| **Open/Closed**           | Adding a new province or product only requires updating `config.ts`. No class needs to be modified.                                                                                                                                                                      |
+| **Liskov Substitution**   | Any `IDataFetcher` implementation can replace `ApiDataFetcher` without breaking `StationRepository`.                                                                                                                                                                     |
+| **Interface Segregation** | All interfaces (`IDataFetcher`, `IStationParser`, `IStationRepository`, `IStationLoader`, `IReportGenerator`, `IReportFormatter`, `IReportWriter`) are kept small and focused.                                                                                           |
+| **Dependency Inversion**  | All classes depend on interfaces, not concrete implementations. `AnalyzerFactory` centralises construction.                                                                                                                                                              |
 
 ### Clean code practices applied
 
 Following Martin (2009), the codebase applies:
 
 - **Meaningful names** — `parseSpanishFloat`, `NoDataAvailableError`,
-  `getByProvinceAndProduct`, `getStationsByProvinceAndProduct`express intent without comments.
+  `deduplicateByLocation`, `filterHighway` express intent without comments.
 - **Small functions** — each method does exactly one thing.
 - **No magic numbers** — all province and product IDs are named constants
   in `config.ts`.
 - **Explicit error handling** — `NoDataAvailableError` distinguishes expected
   API behaviour (no data yet) from unexpected errors (network failure, etc.).
+- **DRY** — date utilities extracted to `src/utils/date.ts`, CLI presentation
+  extracted to `src/cli/`.
+
+### Design patterns applied
+
+Following Gamma et al. (1994), the following patterns are applied:
+
+| Pattern            | Type        | Application                                                                                          |
+| ------------------ | ----------- | ---------------------------------------------------------------------------------------------------- |
+| **Singleton**      | Creational  | `Config` — guarantees a single instance of application configuration                                 |
+| **Factory Method** | Creational  | `AnalyzerFactory` — centralises object creation, decoupling `index.ts` from concrete implementations |
+| **Repository**     | Structural  | `StationRepository` — abstracts data access behind a clean interface                                 |
+| **Strategy**       | Behavioural | `ReportMode` — `'all'` vs `'no-highway'` are interchangeable algorithms for filtering stations       |
+| **Facade**         | Structural  | `StationLoader` — simplifies the fetch+parse pipeline behind a single `load()` method                |
 
 ### UML Diagram
+
 ```mermaid
 classDiagram
+    class Config {
+        <<singleton>>
+        -instance: Config
+        +baseUrl: string
+        +provinces: Province[]
+        +products: Product[]
+        +getInstance() Config
+    }
+    class AnalyzerFactory {
+        <<factory>>
+        +createFetcher() IDataFetcher
+        +createParser() IStationParser
+        +createRepository() IStationRepository
+        +createLoader() IStationLoader
+        +createGenerator() IReportGenerator
+        +createFormatter() IReportFormatter
+        +createWriter() IReportWriter
+    }
     class IDataFetcher {
         <<interface>>
         +fetch(date: string, provinceId: string, productId: string) Promise~RawApiResponse~
@@ -323,13 +418,26 @@ classDiagram
         +load(date: string) Promise~StationStore~
         +getStationsByProvinceAndProduct(store: StationStore, provinceName: string, productName: string) Station[]
     }
+    class IReportGenerator {
+        <<interface>>
+        +generate(store: StationStore, date: string, mode: ReportMode) ReportData
+    }
+    class IReportFormatter {
+        <<interface>>
+        +format(data: ReportData) string
+        +formatPages(data: ReportData) string[]
+    }
+    class IReportWriter {
+        <<interface>>
+        +write(text: string, date: string, mode: string, save: boolean) void
+    }
     class ApiDataFetcher {
         +fetch(date: string, provinceId: string, productId: string) Promise~RawApiResponse~
     }
     class StationParser {
         +parse(raw: RawApiResponse, productId: string, productName: string) Station[]
         +parseSpanishFloat(value: string) number
-        -mapStation(s: RawStation, productId: string, productName: string, date: Date) Station
+        -mapStation(s: RawStationData, productId: string, productName: string, date: Date) Station
         -parseDate(fecha: string) Date
     }
     class StationRepository {
@@ -342,31 +450,25 @@ classDiagram
         +load(date: string) Promise~StationStore~
         +getStationsByProvinceAndProduct(store: StationStore, provinceName: string, productName: string) Station[]
     }
-    class RawApiResponse {
-        <<interface>>
-        +Fecha: string
-        +ListaEESSPrecio: RawStation[]
-        +ResultadoConsulta?: string
+    class ReportGenerator {
+        -HIGHWAY_KEYWORDS: string[]
+        +generate(store: StationStore, date: string, mode: ReportMode) ReportData
+        -deduplicateByLocation(stations: Station[]) Station[]
+        -filterHighway(stations: Station[]) Station[]
+        -calculateAverage(stations: Station[]) number
+        -getTopN(stations: Station[], n: number, order: string) Station[]
     }
-    class RawStation {
-        <<interface>>
-        +IDEESS: string
-        +Rótulo: string
-        +PrecioProducto: string
-        +Provincia: string
-        +Latitud: string
-        +Longitud: string
-        +Localidad: string
+    class ReportFormatter {
+        +format(data: ReportData) string
+        +formatPages(data: ReportData) string[]
+        -formatEntry(entry: ReportEntry) string[]
+        -formatStations(stations: Station[]) string[]
+        -formatMode(mode: string) string
     }
-    class Station {
-        <<interface>>
-        +id: string
-        +name: string
-        +price: number
-        +province: string
-        +lat: number
-        +lon: number
-        +date: Date
+    class ReportWriter {
+        -outputDir: string
+        +write(text: string, date: string, mode: string, save: boolean) void
+        -saveToFile(text: string, date: string, mode: string) void
     }
     class StationStore {
         <<type>>
@@ -378,104 +480,150 @@ classDiagram
         +constructor(date: string)
     }
 
-    IStationRepository <|.. StationRepository : implements
     IDataFetcher <|.. ApiDataFetcher : implements
     IStationParser <|.. StationParser : implements
+    IStationRepository <|.. StationRepository : implements
     IStationLoader <|.. StationLoader : implements
+    IReportGenerator <|.. ReportGenerator : implements
+    IReportFormatter <|.. ReportFormatter : implements
+    IReportWriter <|.. ReportWriter : implements
+
     StationRepository "1" --> "1" IDataFetcher : uses
     StationRepository "1" --> "1" IStationParser : uses
     StationLoader "1" --> "1" IStationRepository : uses
     StationLoader ..> StationStore : produces
-    ApiDataFetcher ..> RawApiResponse : returns
     ApiDataFetcher ..> NoDataAvailableError : throws
     StationParser ..> Station : produces
-    StationParser ..> RawApiResponse : reads
-    RawApiResponse "1" *-- "0..*" RawStation : contains
-    StationStore "1" *-- "0..*" Station : contains
+    ReportGenerator ..> ReportData : produces
+    ReportFormatter ..> ReportData : reads
+    ReportWriter ..> string : writes
+
+    AnalyzerFactory ..> IDataFetcher : creates
+    AnalyzerFactory ..> IStationParser : creates
+    AnalyzerFactory ..> IStationRepository : creates
+    AnalyzerFactory ..> IStationLoader : creates
+    AnalyzerFactory ..> IReportGenerator : creates
+    AnalyzerFactory ..> IReportFormatter : creates
+    AnalyzerFactory ..> IReportWriter : creates
 ```
 
 ### Data flow
+
 ```
 CLI (index.ts)
     │
+    ├── AnalyzerFactory.createLoader()
+    │
     └── StationLoader.load(date)
             │
-            └── para cada provincia × producto (8 combinaciones):
+            └── per province × product (8 combinations):
                   └── StationRepository.getByProvinceAndProduct()
                         ├── ApiDataFetcher.fetch() → GET Ministry REST API
                         │       └── RawApiResponse (JSON)
                         └── StationParser.parse()
-                                ├── filter: remove stations with empty PrecioProducto
-                                ├── map: RawStation → Station
-                                │     ├── parseSpanishFloat("1,859") → 1.859
-                                │     ├── parseSpanishFloat("40,528") → 40.528
+                                ├── filter: remove empty PrecioProducto
+                                ├── map: RawStationData → Station
+                                │     ├── parseSpanishFloat("1,595") → 1.595
                                 │     ├── trim("AJALVIR   ") → "AJALVIR"
-                                │     └── parseDate("21/03/2026 0:00:00") → Date
+                                │     └── parseDate("12/05/2026 0:00:00") → Date
                                 └── Station[]
             │
             └── StationStore (in-memory)
-                  {
-                    "Madrid"   → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] },
-                    "A Coruña" → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] },
-                    "Tenerife" → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] },
-                    "Badajoz"  → { "Gasolina 95 E5" → Station[], "Gasóleo A" → Station[] }
-                  }
+
+  [--report flag]
+    │
+    ├── selectReportMode() → 'all' | 'no-highway'
+    │
+    ├── ReportGenerator.generate(store, date, mode)
+    │       ├── deduplicateByLocation()
+    │       ├── filterHighway() [if no-highway]
+    │       ├── calculateAverage()
+    │       └── getTopN(5, asc) + getTopN(5, desc)
+    │       └── ReportData
+    │
+    ├── ReportFormatter.formatPages(data) → string[]
+    │
+    ├── ReportWriter.write() [if --save-report]
+    │       └── reports/report-DD-MM-YYYY-{mode}.txt
+    │
+    └── paginateReport(pages) → interactive console
 ```
 
 ---
 
 ## Project Structure
+
 ```
 AB-HHM-U20/
 ├── .devcontainer/                  # Docker + VSCode container config
 ├── DataReader/                     # Base example provided by MSMK (unmodified)
 ├── FuelPriceAnalyzer/              # Main project
 │   ├── src/
-│   │   ├── index.ts                # CLI entry point
-│   │   ├── config.ts               # Province and product constants
+│   │   ├── index.ts                # CLI entry point — orchestration only
+│   │   ├── config.ts               # Config Singleton — provinces, products, base URL
+│   │   ├── AnalyzerFactory.ts      # Factory Method — creates all components
 │   │   ├── ApiDataFetcher.ts       # REST API client (HTTP only)
 │   │   ├── StationParser.ts        # JSON → Station[] transformer
-│   │   ├── StationRepository.ts    # Orchestrator
-│   │   ├── StationLoader.ts        # In-memory StationStore builder
+│   │   ├── StationRepository.ts    # Orchestrates fetch + parse
+│   │   ├── StationLoader.ts        # Builds in-memory StationStore (Facade)
+│   │   ├── ReportGenerator.ts      # Calculates averages and top 5
+│   │   ├── ReportFormatter.ts      # Formats report for display
+│   │   ├── ReportWriter.ts         # Saves report to file
+│   │   ├── cli/
+│   │   │   ├── prompt.ts           # Interactive mode selection and pagination
+│   │   │   └── summary.ts          # Summary mode output
 │   │   ├── errors/
-│   │   │   └── NoDataAvailableError.ts  # Custom error for API 400 responses
+│   │   │   └── NoDataAvailableError.ts
 │   │   ├── interfaces/
 │   │   │   ├── IDataFetcher.ts
 │   │   │   ├── IStationParser.ts
 │   │   │   ├── IStationRepository.ts
-│   │   │   └── IStationLoader.ts
-│   │   └── types/
-│   │       ├── raw.ts              # Raw API response types
-│   │       ├── station.ts          # Clean internal domain model
-│   │       └── stationStore.ts     # In-memory store type definition
+│   │   │   ├── IStationLoader.ts
+│   │   │   ├── IReportGenerator.ts
+│   │   │   ├── IReportFormatter.ts
+│   │   │   └── IReportWriter.ts
+│   │   ├── types/
+│   │   │   ├── raw.ts              # Raw API response types
+│   │   │   ├── station.ts          # Clean internal domain model
+│   │   │   ├── stationStore.ts     # In-memory store type
+│   │   │   └── report.ts           # Report types and ReportMode
+│   │   └── utils/
+│   │       └── date.ts             # Date formatting utilities
 │   ├── tests/
-│   │   ├── StationParser.test.ts   # Unit tests for StationParser
-│   │   └── StationLoader.test.ts   # Unit tests for StationLoader with mocks
+│   │   ├── StationParser.test.ts
+│   │   ├── StationLoader.test.ts
+│   │   ├── ReportGenerator.test.ts
+│   │   ├── ReportFormatter.test.ts
+│   │   ├── Config.test.ts
+│   │   ├── AnalyzerFactory.test.ts
+│   │   └── NoDataAvailableError.test.ts
 │   ├── package.json
 │   └── tsconfig.json
 ├── .gitignore
-├── Contributing.md                 # Contribution guidelines
-└── README.md                       # Project documentation
+├── CONTRIBUTING.md
+└── README.md
 ```
 
 ---
 
 ## Testing
 
-Tests are written with **Jest** and **ts-jest**. The test suite covers
-`StationParser`, which contains all data transformation logic and has no
-external dependencies — making it fully testable in isolation (Martin, 2003).
+Tests are written with **Jest** and **ts-jest** following the AAA pattern
+(Arrange, Act, Assert) as described in the course materials. Unit tests use
+Jest mocks to isolate each class from its dependencies (Meta Platforms, 2026).
 
 > [!IMPORTANT]
 > Tests must pass before any contribution is accepted. Run `npm test`
 > inside the Dev Container, not locally.
 
 Run the full test suite:
+
 ```bash
 npm test
 ```
 
 Current test results:
+
 ```
 PASS  tests/StationParser.test.ts
   ✓ Filters out stations with empty price
@@ -492,53 +640,108 @@ PASS  tests/StationLoader.test.ts
   ✓ Returns empty array for unknown province
   ✓ Returns null when no data available
 
-Test Suites: 2 passed, 2 total
-Tests:       11 passed, 11 total
+PASS  tests/ReportGenerator.test.ts
+  ✓ Generates one entry per province/product combination
+  ✓ Calculates correct average price
+  ✓ Returns top 5 cheapest sorted ascending
+  ✓ Returns top 5 most expensive sorted descending
+  ✓ Deduplicates stations with same address and locality
+  ✓ Excludes highway stations in no-highway mode
+  ✓ Includes highway stations in all mode
+  ✓ Propagates date and mode to ReportData
+  ✓ Returns empty entries when store has no data
+  ✓ Average price with single station equals station price
+
+PASS  tests/ReportFormatter.test.ts
+  ✓ Format includes date in header
+  ✓ Format includes mode in header
+  ✓ Format includes province and product
+  ✓ Format includes average price
+  ✓ Format includes cheapest station name
+  ✓ Format includes most expensive station name
+  ✓ Format no-highway mode shows correct label
+  ✓ formatPages returns one page per entry
+  ✓ formatPages each page contains entry province
+  ✓ formatPages each page contains report header
+
+PASS  tests/Config.test.ts
+  ✓ getInstance returns the same instance every time
+  ✓ Provinces contains all four required provinces
+  ✓ Products contains Gasolina 95 E5 and Gasoleo A habitual
+  ✓ Madrid province has correct ID
+  ✓ Gasolina 95 E5 has correct product ID
+
+PASS  tests/AnalyzerFactory.test.ts
+  ✓ createFetcher returns object with fetch method
+  ✓ createParser returns object with parse method
+  ✓ createRepository returns object with getByProvinceAndProduct method
+  ✓ createLoader returns object with load method
+  ✓ createGenerator returns object with generate method
+  ✓ createFormatter returns object with format method
+  ✓ createWriter returns object with write method
+  ✓ createLoader returns new instance each call
+
+PASS  tests/NoDataAvailableError.test.ts
+  ✓ Has correct error name
+  ✓ Message contains the date
+  ✓ Message mentions API delay
+  ✓ Is instance of Error
+  ✓ Is instance of NoDataAvailableError
+
+Test Suites: 7 passed, 7 total
+Tests:       49 passed, 49 total
 ```
 
-The test strategy for Milestone 1 covers two units:
+### Test strategy
 
-- `StationParser` — tested with real mock data, covering all data 
-  transformation logic: Spanish decimal parsing, whitespace trimming, 
-  empty price filtering and date propagation.
-- `StationLoader` — tested with a Jest mock of `IStationRepository`, 
-  verifying that the in-memory store is correctly built and that 
-  province/product lookups work as expected.
-
-`ApiDataFetcher` and `StationRepository` interact directly with external 
-services and will be covered with integration tests in subsequent milestones.
+| Class                  | Test type                 | Reason                                           |
+| ---------------------- | ------------------------- | ------------------------------------------------ |
+| `StationParser`        | Unit test                 | Pure logic, no external dependencies             |
+| `StationLoader`        | Unit test with Jest mocks | Depends on `IStationRepository` — mocked         |
+| `ReportGenerator`      | Unit test                 | Pure calculation logic, no external dependencies |
+| `ReportFormatter`      | Unit test                 | Pure formatting logic, no external dependencies  |
+| `Config`               | Unit test                 | Singleton behaviour verification                 |
+| `AnalyzerFactory`      | Unit test                 | Factory method contract verification             |
+| `NoDataAvailableError` | Unit test                 | Custom error class verification                  |
+| `ApiDataFetcher`       | Integration test (future) | Depends on Ministry REST API                     |
+| `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`   |
+| `ReportWriter`         | Integration test (future) | Depends on file system                           |
 
 ---
 
 ## References
 
-Martin, R.C. (2003) *Agile Software Development: Principles, Patterns, and
-Practices*. Upper Saddle River: Prentice Hall.
+Gamma, E., Helm, R., Johnson, R. and Vlissides, J. (1994) _Design Patterns:
+Elements of Reusable Object-Oriented Software_. Reading: Addison-Wesley
+Professional.
 
-Martin, R.C. (2009) *Clean Code: A Handbook of Agile Software Craftsmanship*.
+Martin, R.C. (2003) _Agile Software Development: Principles, Patterns, and
+Practices_. Upper Saddle River: Prentice Hall.
+
+Martin, R.C. (2009) _Clean Code: A Handbook of Agile Software Craftsmanship_.
 Upper Saddle River: Prentice Hall.
 
 Ministerio para la Transición Ecológica y el Reto Demográfico (2026)
-*Servicio REST de Precios de Carburantes — Documentación de operaciones*.
+_Servicio REST de Precios de Carburantes — Documentación de operaciones_.
 Available at:
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/help
-(Accessed: 21 March 2026).
+(Accessed: 13 May 2026).
 
 Ministerio para la Transición Ecológica y el Reto Demográfico (2026)
-*Listado de productos petrolíferos*. Available at:
+_Listado de productos petrolíferos_. Available at:
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/Listados/ProductosPetroliferos/
-(Accessed: 21 March 2026).
+(Accessed: 13 May 2026).
 
 Ministerio para la Transición Ecológica y el Reto Demográfico (2026)
-*Listado de provincias*. Available at:
+_Listado de provincias_. Available at:
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/Listados/Provincias/
-(Accessed: 21 March 2026).
+(Accessed: 13 May 2026).
 
-Microsoft (2026) *TypeScript Documentation*. Available at:
-https://www.typescriptlang.org/docs/ (Accessed: 25 March 2026).
+Meta Platforms (2026) _Jest: JavaScript Testing Framework_. Available at:
+https://jestjs.io/docs/getting-started (Accessed: 13 May 2026).
 
-Meta Platforms (2026) *Jest: JavaScript Testing Framework*. Available at:
-https://jestjs.io/docs/getting-started (Accessed: 25 March 2026).
+Microsoft (2026) _TypeScript Documentation_. Available at:
+https://www.typescriptlang.org/docs/ (Accessed: 13 May 2026).
 
-Conventional Commits (2024) *Conventional Commits specification v1.0.0*.
-Available at: https://www.conventionalcommits.org (Accessed: 25 March 2026).
+Conventional Commits (2024) _Conventional Commits specification v1.0.0_.
+Available at: https://www.conventionalcommits.org (Accessed: 13 May 2026).
