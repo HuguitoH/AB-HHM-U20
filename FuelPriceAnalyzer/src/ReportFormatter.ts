@@ -8,20 +8,25 @@ import type { Station } from "./types/station.js";
  * Single Responsibility Principle: only handles presentation logic.
  * No calculation, no output, no HTTP calls.
  */
+
 export class ReportFormatter implements IReportFormatter {
   format(data: ReportData): string {
     const lines: string[] = [];
 
-    lines.push("=".repeat(60));
     lines.push(`  FUEL PRICE REPORT — ${data.date}`);
-    lines.push("=".repeat(60));
-    lines.push("");
+    lines.push(`  Mode: ${this.formatMode(data.mode)}`);
 
     for (const entry of data.entries) {
       lines.push(...this.formatEntry(entry));
     }
 
     return lines.join("\n");
+  }
+
+  private formatMode(mode: string): string {
+    return mode === "no-highway"
+      ? "Excluding highway stations"
+      : "All stations";
   }
 
   private formatEntry(entry: ReportEntry): string[] {
@@ -41,6 +46,22 @@ export class ReportFormatter implements IReportFormatter {
     lines.push("");
 
     return lines;
+  }
+
+  /**
+   * Formats each report entry as a separate page for pagination.
+   */
+  formatPages(data: ReportData): string[] {
+    const header = [
+      `  FUEL PRICE REPORT — ${data.date}`,
+      `  Mode: ${this.formatMode(data.mode)}`,
+      "",
+    ].join("\n");
+
+    return data.entries.map((entry) => {
+      const entryText = this.formatEntry(entry).join("\n");
+      return `${header}\n${entryText}`;
+    });
   }
 
   private formatStations(stations: Station[]): string[] {
