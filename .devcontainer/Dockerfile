@@ -2,7 +2,7 @@
 ################
 ## Base image installing common dependencies
 ################
-FROM node:24-alpine 
+FROM node:24-alpine
 
 RUN apk update && apk add --no-cache \
     curl \
