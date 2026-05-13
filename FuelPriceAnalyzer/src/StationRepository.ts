@@ -11,20 +11,24 @@ import type { Station } from "./types/station.js";
  * ApiDataFetcher for a mock in tests without modifying this class.
  */
 export class StationRepository implements IStationRepository {
+  // Dependencies injected via constructor (Dependency Injection pattern)
+  constructor(
+    private readonly fetcher: IDataFetcher,
+    private readonly parser: IStationParser,
+  ) {}
 
-    // Dependencies injected via constructor (Dependency Injection pattern)
-    constructor(
-        private readonly fetcher: IDataFetcher,
-        private readonly parser: IStationParser
-    ) { }
-    
-    async getByProvinceAndProduct(
-        date: string,
-        provinceId: string,
-        productId: string,
-        productName: string
-    ): Promise<Station[]> {
-        const raw = await this.fetcher.fetch(date, provinceId, productId);
-        return this.parser.parse(raw, productId, productName);
-    }
+  /**
+   * Fetches and parses station data for a given date, province and product.
+   * @throws NoDataAvailableError if the API has no data for the given date
+   * @throws Error if the API returns an unexpected error
+   */
+  async getByProvinceAndProduct(
+    date: string,
+    provinceId: string,
+    productId: string,
+    productName: string,
+  ): Promise<Station[]> {
+    const raw = await this.fetcher.fetch(date, provinceId, productId);
+    return this.parser.parse(raw, productId, productName);
+  }
 }
