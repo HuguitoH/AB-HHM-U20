@@ -22,6 +22,7 @@ practices (Martin, 2009) applied throughout the codebase.
     - [Naming conventions](#naming-conventions)
     - [Code style](#code-style)
     - [Adding new provinces or products](#adding-new-provinces-or-products)
+    - [Adding a new chart style](#adding-a-new-chart-style)
   - [SOLID Principles](#solid-principles)
   - [Testing](#testing)
     - [Writing new tests](#writing-new-tests)
@@ -42,7 +43,7 @@ practices (Martin, 2009) applied throughout the codebase.
 - [ ] New functionality includes new tests
 - [ ] Commits follow Conventional Commits format
 - [ ] JSDoc added to all new public classes
-- [ ] No magic numbers — constants defined in `config.ts`
+- [ ] No magic numbers — constants defined in the class or `config.ts`
 - [ ] No commented-out code — use Git history instead
 - [ ] README updated if behaviour or structure changed
 
@@ -77,7 +78,7 @@ cd FuelPriceAnalyzer
 
 ```bash
 npm test
-npm run dev -- --date 21-03-2026
+npm run dev -- --date 21-05-2026
 ```
 
 > [!TIP]
@@ -128,7 +129,7 @@ Following Martin (2009), all names must express intent clearly:
 ### Code style
 
 - **Small functions** — each function does exactly one thing.
-- **No magic numbers** — use named constants from `config.ts`.
+- **No magic numbers** — use named constants defined in the class or `config.ts`.
 - **Explicit error handling** — use typed custom errors, not generic `Error`.
 - **No commented-out code** — use Git history instead.
 - **JSDoc on all public classes** — document the why, not the what.
@@ -139,17 +140,49 @@ The project follows the **Open/Closed Principle** (Martin, 2003) — to add a
 new province or product, only `src/config.ts` needs to be modified:
 
 ```typescript
-export const PROVINCES = [
-  { name: "Madrid", id: "28" },
-  { name: "A Coruña", id: "15" },
-  { name: "Tenerife", id: "38" },
-  { name: "Badajoz", id: "06" },
-  { name: "Sevilla", id: "41" }, // ← add here only
+readonly provinces = [
+  { name: "Madrid",   id: "28", apiName: "MADRID" },
+  { name: "A Coruña", id: "15", apiName: "CORUÑA (A)" },
+  { name: "Tenerife", id: "38", apiName: "SANTA CRUZ DE TENERIFE" },
+  { name: "Badajoz",  id: "06", apiName: "BADAJOZ" },
+  { name: "Sevilla",  id: "41", apiName: "SEVILLA" }, // ← add here only
 ] as const;
 ```
 
+The `apiName` field must match the exact province name returned by the
+all-Spain endpoint (`FiltroProducto`) — verify it by inspecting a live API
+response before adding a new province.
+
 > [!NOTE]
 > No other class needs to be modified — this is Open/Closed in practice.
+
+### Adding a new chart style
+
+The **Strategy Pattern** is applied to chart renderers — adding a new chart
+style only requires:
+
+1. Create a new class implementing `IChartRenderer` in `src/`:
+
+```typescript
+export class MyChartRenderer implements IChartRenderer {
+  render(input: ChartInput): string {
+    const data = input.weekly; // or input.daily for time series
+    // ...
+  }
+}
+```
+
+2. Add a factory method to `AnalyzerFactory`:
+
+```typescript
+static createMyChartRenderer(): IChartRenderer {
+  return new MyChartRenderer();
+}
+```
+
+3. Add the option to `selectChartStyle()` in `src/cli/chartPrompt.ts`.
+
+No existing renderer or orchestration code needs to be modified.
 
 ---
 
@@ -158,13 +191,13 @@ export const PROVINCES = [
 All contributions must respect the SOLID principles applied in this project
 (Martin, 2003):
 
-| Principle                 | Requirement                                                                                                                                                                      |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Single Responsibility** | Each class must have exactly one reason to change. Do not add HTTP logic to `StationParser`, parsing logic to `ApiDataFetcher`, or store-building logic outside `StationLoader`. |
-| **Open/Closed**           | Extend behaviour through new classes or config changes, not by modifying existing classes.                                                                                       |
-| **Liskov Substitution**   | Any new implementation of `IDataFetcher` or `IStationParser` must be fully interchangeable with the existing ones.                                                               |
-| **Interface Segregation** | Keep interfaces small and focused. Do not add unrelated methods to existing interfaces.                                                                                          |
-| **Dependency Inversion**  | New classes must depend on interfaces, not on concrete implementations.                                                                                                          |
+| Principle                 | Requirement                                                                                                                                                                         |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Single Responsibility** | Each class must have exactly one reason to change. Do not add HTTP logic to `StationParser`, rendering logic to `WeeklyAnalyzer`, or file I/O outside `ChartWriter`/`ReportWriter`. |
+| **Open/Closed**           | Extend behaviour through new classes or config changes, not by modifying existing classes.                                                                                          |
+| **Liskov Substitution**   | Any new implementation of `IChartRenderer`, `IDataFetcher`, or `ICacheStore` must be fully interchangeable with the existing ones.                                                  |
+| **Interface Segregation** | Keep interfaces small and focused. Do not add unrelated methods to existing interfaces.                                                                                             |
+| **Dependency Inversion**  | New classes must depend on interfaces, not on concrete implementations. Wire dependencies through `AnalyzerFactory`.                                                                |
 
 > [!IMPORTANT]
 > All contributions must follow SOLID principles. A pull request that
@@ -193,31 +226,36 @@ npm test
 - Each test must have a descriptive name explaining what it verifies.
 - Tests must not depend on network access — use mock data for unit tests.
 - Test only classes with pure logic. Classes that interact with external
-  services must use Jest mocks.
+  services (API, file system) must use Jest mocks or a temp directory.
 
 Example of a well-structured test:
 
 ```typescript
-test("parses PrecioProducto string with comma to number", () => {
-  const [station] = parser.parse(mockRaw, "1", "Gasolina 95 E5");
-  expect(station?.price).toBe(1.859);
+test("calculates correct average for Tuesday with multiple weeks", () => {
+  const result = analyzer.analyze(mockData, "1", "Gasolina 95 E5", "04-2026");
+  expect(result.averagesByDay["Tue"]).toBe(1.5);
 });
 ```
 
 ### Testing strategy
 
-| Class                  | Test type                 | Reason                                           |
-| ---------------------- | ------------------------- | ------------------------------------------------ |
-| `StationParser`        | Unit test                 | Pure logic, no external dependencies             |
-| `StationLoader`        | Unit test with Jest mocks | Depends on `IStationRepository` — mocked         |
-| `ReportGenerator`      | Unit test                 | Pure calculation logic, no external dependencies |
-| `ReportFormatter`      | Unit test                 | Pure formatting logic, no external dependencies  |
-| `Config`               | Unit test                 | Singleton behaviour verification                 |
-| `AnalyzerFactory`      | Unit test                 | Factory method contract verification             |
-| `NoDataAvailableError` | Unit test                 | Custom error class verification                  |
-| `ApiDataFetcher`       | Integration test (future) | Depends on Ministry REST API                     |
-| `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`   |
-| `ReportWriter`         | Integration test (future) | Depends on file system                           |
+| Class                  | Test type                 | Reason                                                        |
+| ---------------------- | ------------------------- | ------------------------------------------------------------- |
+| `StationParser`        | Unit test                 | Pure logic, no external dependencies                          |
+| `StationLoader`        | Unit test with Jest mocks | Depends on `IStationRepository` — mocked                      |
+| `ReportGenerator`      | Unit test                 | Pure calculation logic, no external dependencies              |
+| `ReportFormatter`      | Unit test                 | Pure formatting logic, no external dependencies               |
+| `Config`               | Unit test                 | Singleton behaviour verification                              |
+| `AnalyzerFactory`      | Unit test                 | Factory method contract verification — all 15 factory methods |
+| `NoDataAvailableError` | Unit test                 | Custom error class verification                               |
+| `WeeklyAnalyzer`       | Unit test                 | Pure aggregation logic — day-of-week grouping and averaging   |
+| `FileCacheStore`       | Unit test                 | Cache read/write/persist logic with temp directory            |
+| `AsciiChartRenderer`   | Unit test                 | Pure rendering logic — output string verification             |
+| `SvgChartGenerator`    | Unit test                 | Pure SVG generation — markup structure verification           |
+| `ApiDataFetcher`       | Integration test (future) | Depends on Ministry REST API                                  |
+| `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`                |
+| `ReportWriter`         | Integration test (future) | Depends on file system                                        |
+| `WeeklyDataFetcher`    | Integration test (future) | Depends on Ministry REST API and `ICacheStore`                |
 
 ---
 
@@ -232,6 +270,10 @@ graph LR
     D -- Yes --> E[Commit]
     E --> F[Push]
     F --> G[Pull Request]
+    G --> H[CI — GitHub Actions]
+    H --> I{Green?}
+    I -- No --> B
+    I -- Yes --> J[Merge]
 ```
 
 ---
@@ -255,16 +297,17 @@ This project follows the **Conventional Commits** specification
 | `test`     | Adding or modifying tests            |
 | `docs`     | Documentation only                   |
 | `chore`    | Config, dependencies, tooling        |
+| `ci`       | CI/CD pipeline changes               |
 
 **Examples:**
 
 ```
-feat(parser): add trim for trailing whitespace in locality field
-fix(fetcher): handle 503 response from Ministry API
-test(parser): add edge case for empty price string
-docs(readme): update installation instructions
-refactor(config): extract province IDs to named constants
-chore(deps): update jest to 29.7.0
+feat(charts): implement AsciiChartRenderer with horizontal bar layout
+fix(config): add apiName to provinces for correct Ministry API matching
+test(weekly): add unit tests for WeeklyAnalyzer day-of-week grouping
+docs(readme): update Quick Start table with --charts flag
+refactor(factory): add Milestone 3 factory methods to AnalyzerFactory
+ci: add GitHub Actions workflow for automated testing
 ```
 
 > [!CAUTION]
@@ -282,7 +325,7 @@ chore(deps): update jest to 29.7.0
 ## References
 
 Conventional Commits (2024) _Conventional Commits specification v1.0.0_.
-Available at: https://www.conventionalcommits.org (Accessed: 25 March 2026).
+Available at: https://www.conventionalcommits.org (Accessed: 23 May 2026).
 
 Martin, R.C. (2003) _Agile Software Development: Principles, Patterns, and
 Practices_. Upper Saddle River: Prentice Hall.
@@ -291,11 +334,11 @@ Martin, R.C. (2009) _Clean Code: A Handbook of Agile Software Craftsmanship_.
 Upper Saddle River: Prentice Hall.
 
 Meta Platforms (2026) _Jest: JavaScript Testing Framework_. Available at:
-https://jestjs.io/docs/getting-started (Accessed: 25 March 2026).
+https://jestjs.io/docs/getting-started (Accessed: 23 May 2026).
 
 Microsoft (2026) _Dev Containers documentation_. Available at:
 https://code.visualstudio.com/docs/devcontainers/containers
-(Accessed: 25 March 2026).
+(Accessed: 23 May 2026).
 
 Gamma, E., Helm, R., Johnson, R. and Vlissides, J. (1994) _Design Patterns:
 Elements of Reusable Object-Oriented Software_. Reading: Addison-Wesley

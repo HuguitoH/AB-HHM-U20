@@ -1,14 +1,15 @@
 # Fuel Price Analyzer
 
-![Milestone](https://img.shields.io/badge/milestone-2%20complete-brightgreen)
-![Tests](https://img.shields.io/badge/tests-49%20passed-brightgreen)
+![Milestone](https://img.shields.io/badge/milestone-3%20complete-brightgreen)
+![Tests](https://img.shields.io/badge/tests-83%20passed-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 ![Node](https://img.shields.io/badge/Node-24--alpine-green)
+![CI](https://github.com/HuguitoH/AB-HHM-U20/actions/workflows/ci.yml/badge.svg)
 ![License](https://img.shields.io/badge/license-ISC-lightgrey)
 
 A command-line tool that fetches and processes fuel price data from Spain's
 Ministry of Ecological Transition REST API, generating daily reports and
-market intelligence for a fuel distribution company.
+weekly market intelligence charts for a fuel distribution company.
 
 > This project is built on top of the base repository for Unit 20. The `DataReader/` folder contains an
 > example code reader for CSV and has not been modified.
@@ -27,6 +28,7 @@ market intelligence for a fuel distribution company.
     - [Summary mode](#summary-mode)
     - [Report mode](#report-mode)
     - [Save report to file](#save-report-to-file)
+    - [Charts mode](#charts-mode)
   - [Data Source](#data-source)
     - [Endpoints used](#endpoints-used)
     - [JSON response structure](#json-response-structure)
@@ -55,7 +57,7 @@ y el Reto Demográfico, 2026).
 
 The company has presence in the following provinces and fuel types:
 
-```mermaid
+``` mermaid
 graph TD
     A[Company Coverage] --> B[Provinces]
     A --> C[Fuels]
@@ -93,13 +95,15 @@ Dev Container, which is based on `node:24-alpine`.
 
 | Command                                                   | Description                         |
 | --------------------------------------------------------- | ----------------------------------- |
-| `npm run dev -- --date 21-03-2026`                        | Summary mode — stations loaded      |
+| `npm run dev -- --date 21-05-2026`                        | Summary mode — stations loaded      |
 | `npm run dev`                                             | Summary mode for today              |
-| `npm run dev -- --date 21-03-2026 --report`               | Full report with averages and top 5 |
-| `npm run dev -- --date 21-03-2026 --report --save-report` | Report + save to `reports/`         |
+| `npm run dev -- --date 21-05-2026 --report`               | Full report with averages and top 5 |
+| `npm run dev -- --date 21-05-2026 --report --save-report` | Report + save to `reports/`         |
+| `npm run dev -- --charts`                                 | Weekly charts for current month     |
+| `npm run dev -- --charts --month 04-2026`                 | Weekly charts for a specific month  |
 | `npm run build`                                           | Compile TypeScript to `dist/`       |
-| `npm start -- --date 21-03-2026`                          | Run compiled version                |
-| `npm test`                                                | Run test suite                      |
+| `npm start -- --date 21-05-2026`                          | Run compiled version                |
+| `npm test`                                                | Run test suite (83 tests)           |
 
 ---
 
@@ -233,6 +237,73 @@ The Ministry API publishes data with a 1-2 day delay.
 Try: npm run dev -- --date DD-MM-YYYY
 ```
 
+### Charts mode
+
+Generates weekly price charts showing the average price per day of the week
+over the last 30 days, for each fuel type across all studied provinces.
+An SVG bar chart image is always saved to `charts/` for each fuel type.
+An interactive chart style selector is shown before rendering:
+
+```bash
+npm run dev -- --charts
+npm run dev -- --charts --month 04-2026
+```
+
+```
+  Chart style:
+  [1] Horizontal bars  — compare prices day by day
+  [2] Dot plot         — see price spread across the week
+  [3] Line chart       — see 30-day price trend
+
+  Select [1/2/3]:
+```
+
+**Horizontal bars** — shows the average price per day of the week as
+horizontal bars. The bar length is proportional to how far above the
+weekly minimum each day's price is. This is the primary visualisation
+and matches the SVG output:
+
+```
+============================================================
+  WEEKLY CHART — Gasolina 95 E5 — 04-2026
+  Mode: Horizontal bars
+============================================================
+
+  Day  |                        | Price
+  -----|------------------------|-------
+  Mon  |███████████████         | 1.530 €/L
+
+  Tue  |████████████████████████| 1.532 €/L
+
+  Wed  |████████                | 1.527 €/L
+
+  Thu  |█████████████           | 1.529 €/L
+
+  Fri  |                        | 1.524 €/L
+
+  Sat  |██████                  | 1.526 €/L
+
+  Sun  |████████                | 1.527 €/L
+
+  -----|------------------------|-------
+
+  Min: 1.524 €/L (Fri)   Max: 1.532 €/L (Tue)
+============================================================
+```
+
+**Dot plot** — shows the same weekly averages as positioned dots,
+useful for visualising the spread across days of the week.
+
+**Line chart** — shows the full 30-day price evolution as a time series,
+useful for spotting price trends over the month.
+
+SVG charts are saved automatically to `charts/` on every run:
+
+```
+charts/chart-gasolina-95-e5-04-2026.svg
+charts/chart-gasleo-a-habitual-04-2026.svg
+```
+
 ---
 
 ## Data Source
@@ -255,7 +326,7 @@ https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/
 
 ### Endpoints used
 
-**Historical prices by province and product:**
+**Historical prices by province and product (Milestones 1 & 2):**
 
 ```
 GET /EstacionesTerrestresHist/FiltroProvinciaProducto/{FECHA}/{IDProvincia}/{IDProducto}
@@ -266,6 +337,17 @@ Example — Madrid, Gasolina 95 E5, 12 May 2026:
 ```
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/EstacionesTerrestresHist/FiltroProvinciaProducto/12-05-2026/28/1
 ```
+
+**Historical prices by product across all Spain (Milestone 3):**
+
+```
+GET /EstacionesTerrestresHist/FiltroProducto/{FECHA}/{IDProducto}
+```
+
+Used to fetch 30 days of data in batches of 5. Results are filtered
+in memory by province `apiName` to avoid 240 separate API calls
+(30 days × 2 products × 4 provinces), reducing the total to 60 calls
+(30 days × 2 products).
 
 ```mermaid
 graph LR
@@ -316,6 +398,9 @@ GET /Listados/ProductosPetroliferos/
   must be filtered out before processing.
 - The `Fecha` field is in the **root response object**, not in each station,
   and must be propagated to each `Station` during parsing.
+- Province names in the all-Spain endpoint use the Ministry's own naming
+  convention: `"CORUÑA (A)"` and `"SANTA CRUZ DE TENERIFE"` — matched via
+  the `apiName` field in `config.ts`.
 
 ### Known API limitations
 
@@ -334,6 +419,9 @@ GET /Listados/ProductosPetroliferos/
 - Some physical stations are registered as **multiple entries** with different
   IDs but identical address and locality — these are deduplicated before
   report generation.
+- The all-Spain endpoint returns province names in a non-standard format
+  that differs from the display names — `apiName` in `config.ts` maps
+  each province to its exact Ministry API name.
 
 ---
 
@@ -345,39 +433,42 @@ al., 1994).
 
 ### SOLID principles applied
 
-| Principle                 | Application                                                                                                                                                                                                                                                              |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Single Responsibility** | `StationParser` only transforms data. `ApiDataFetcher` only handles HTTP. `StationRepository` only orchestrates. `StationLoader` only builds the in-memory store. `ReportGenerator` only calculates. `ReportFormatter` only formats. `ReportWriter` only writes to file. |
-| **Open/Closed**           | Adding a new province or product only requires updating `config.ts`. No class needs to be modified.                                                                                                                                                                      |
-| **Liskov Substitution**   | Any `IDataFetcher` implementation can replace `ApiDataFetcher` without breaking `StationRepository`.                                                                                                                                                                     |
-| **Interface Segregation** | All interfaces (`IDataFetcher`, `IStationParser`, `IStationRepository`, `IStationLoader`, `IReportGenerator`, `IReportFormatter`, `IReportWriter`) are kept small and focused.                                                                                           |
-| **Dependency Inversion**  | All classes depend on interfaces, not concrete implementations. `AnalyzerFactory` centralises construction.                                                                                                                                                              |
+| Principle                 | Application                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Single Responsibility** | `StationParser` only transforms data. `ApiDataFetcher` only handles HTTP. `StationRepository` only orchestrates. `StationLoader` only builds the in-memory store. `ReportGenerator` only calculates. `ReportFormatter` only formats. `ReportWriter` only writes to file. `WeeklyAnalyzer` only computes day-of-week averages. `ChartWriter` only writes SVG to disk. |
+| **Open/Closed**           | Adding a new province or product only requires updating `config.ts`. Adding a new chart style only requires implementing `IChartRenderer` — no existing class needs to be modified.                                                                                                                                                                                  |
+| **Liskov Substitution**   | Any `IDataFetcher` implementation can replace `ApiDataFetcher`. Any `IChartRenderer` implementation (`AsciiChartRenderer`, `DotPlotRenderer`, `LineChartRenderer`, `SvgChartGenerator`) is fully interchangeable.                                                                                                                                                    |
+| **Interface Segregation** | All interfaces are kept small and focused. `IChartRenderer` defines a single `render(input: ChartInput)` method — each renderer decides internally what to use from the input.                                                                                                                                                                                       |
+| **Dependency Inversion**  | All classes depend on interfaces, not concrete implementations. `AnalyzerFactory` centralises construction. `runChartsMode` only knows `IChartRenderer` — never the concrete renderer class.                                                                                                                                                                         |
 
 ### Clean code practices applied
 
 Following Martin (2009), the codebase applies:
 
 - **Meaningful names** — `parseSpanishFloat`, `NoDataAvailableError`,
-  `deduplicateByLocation`, `filterHighway` express intent without comments.
+  `deduplicateByLocation`, `filterHighway`, `extractAverage`, `fillMissingValues`
+  express intent without comments.
 - **Small functions** — each method does exactly one thing.
-- **No magic numbers** — all province and product IDs are named constants
-  in `config.ts`.
+- **No magic numbers** — all province IDs, product IDs, API names, chart
+  dimensions and bar widths are named constants.
 - **Explicit error handling** — `NoDataAvailableError` distinguishes expected
   API behaviour (no data yet) from unexpected errors (network failure, etc.).
 - **DRY** — date utilities extracted to `src/utils/date.ts`, CLI presentation
-  extracted to `src/cli/`.
+  extracted to `src/cli/`, `ChartInput` type shared across all renderers.
 
 ### Design patterns applied
 
 Following Gamma et al. (1994), the following patterns are applied:
 
-| Pattern            | Type        | Application                                                                                          |
-| ------------------ | ----------- | ---------------------------------------------------------------------------------------------------- |
-| **Singleton**      | Creational  | `Config` — guarantees a single instance of application configuration                                 |
-| **Factory Method** | Creational  | `AnalyzerFactory` — centralises object creation, decoupling `index.ts` from concrete implementations |
-| **Repository**     | Structural  | `StationRepository` — abstracts data access behind a clean interface                                 |
-| **Strategy**       | Behavioural | `ReportMode` — `'all'` vs `'no-highway'` are interchangeable algorithms for filtering stations       |
-| **Facade**         | Structural  | `StationLoader` — simplifies the fetch+parse pipeline behind a single `load()` method                |
+| Pattern              | Type        | Application                                                                                                              |
+| -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **Singleton**        | Creational  | `Config` — guarantees a single instance of application configuration                                                     |
+| **Factory Method**   | Creational  | `AnalyzerFactory` — centralises object creation, decoupling `index.ts` from all concrete implementations                 |
+| **Repository**       | Structural  | `StationRepository` — abstracts data access behind a clean interface                                                     |
+| **Strategy**         | Behavioural | `IChartRenderer` — `AsciiChartRenderer`, `DotPlotRenderer`, `LineChartRenderer` are interchangeable rendering algorithms |
+| **Facade**           | Structural  | `StationLoader` — simplifies the fetch+parse pipeline behind a single `load()` method                                    |
+| **Cache-Aside**      | Behavioural | `FileCacheStore` — checks cache before hitting the API; persists to JSON files between runs                              |
+| **Batch Processing** | Behavioural | `WeeklyDataFetcher` — fetches 30 days in batches of 5 with 200ms delay to avoid overwhelming the Ministry API            |
 
 ### UML Diagram
 
@@ -400,111 +491,95 @@ classDiagram
         +createGenerator() IReportGenerator
         +createFormatter() IReportFormatter
         +createWriter() IReportWriter
+        +createCacheStore(productId) ICacheStore
+        +createWeeklyFetcher(productId) IWeeklyDataFetcher
+        +createWeeklyAnalyzer() IWeeklyAnalyzer
+        +createBarChartRenderer() IChartRenderer
+        +createDotPlotRenderer() IChartRenderer
+        +createLineChartRenderer() IChartRenderer
+        +createSvgGenerator() IChartRenderer
+        +createChartWriter() IChartWriter
     }
-    class IDataFetcher {
+    class IChartRenderer {
         <<interface>>
-        +fetch(date: string, provinceId: string, productId: string) Promise~RawApiResponse~
+        +render(input: ChartInput) string
     }
-    class IStationParser {
+    class IWeeklyDataFetcher {
         <<interface>>
-        +parse(raw: RawApiResponse, productId: string, productName: string) Station[]
+        +fetchLastDays(days: number) Promise~DailyPriceData[]~
     }
-    class IStationRepository {
+    class IWeeklyAnalyzer {
         <<interface>>
-        +getByProvinceAndProduct(date: string, provinceId: string, productId: string, productName: string) Promise~Station[]~
+        +analyze(data: DailyPriceData[], productId: string, productName: string, month: string) WeeklyData
     }
-    class IStationLoader {
+    class ICacheStore {
         <<interface>>
-        +load(date: string) Promise~StationStore~
-        +getStationsByProvinceAndProduct(store: StationStore, provinceName: string, productName: string) Station[]
+        +get(date: string, key: string) DailyPriceData
+        +set(date: string, key: string, data: DailyPriceData) void
+        +has(date: string, key: string) boolean
+        +flush() void
     }
-    class IReportGenerator {
+    class IChartWriter {
         <<interface>>
-        +generate(store: StationStore, date: string, mode: ReportMode) ReportData
+        +write(content: string, productName: string, month: string) void
     }
-    class IReportFormatter {
-        <<interface>>
-        +format(data: ReportData) string
-        +formatPages(data: ReportData) string[]
+    class AsciiChartRenderer {
+        +render(input: ChartInput) string
+        -buildBar(value, min, max) string
     }
-    class IReportWriter {
-        <<interface>>
-        +write(text: string, date: string, mode: string, save: boolean) void
+    class DotPlotRenderer {
+        +render(input: ChartInput) string
+        -buildRows(prices, min, max) string[]
     }
-    class ApiDataFetcher {
-        +fetch(date: string, provinceId: string, productId: string) Promise~RawApiResponse~
+    class LineChartRenderer {
+        +render(input: ChartInput) string
+        -extractAverage(day, productName) number
+        -fillMissingValues(prices, valid) number[]
     }
-    class StationParser {
-        +parse(raw: RawApiResponse, productId: string, productName: string) Station[]
-        +parseSpanishFloat(value: string) number
-        -mapStation(s: RawStationData, productId: string, productName: string, date: Date) Station
-        -parseDate(fecha: string) Date
+    class SvgChartGenerator {
+        +render(input: ChartInput) string
+        -buildYAxis(...) string
+        -buildBars(...) string
+        -buildXAxis(...) string
     }
-    class StationRepository {
-        -fetcher: IDataFetcher
-        -parser: IStationParser
-        +getByProvinceAndProduct(date: string, provinceId: string, productId: string, productName: string) Promise~Station[]~
+    class WeeklyDataFetcher {
+        -cache: ICacheStore
+        +fetchLastDays(days) Promise~DailyPriceData[]~
+        -fetchInBatches(dates) Promise~DailyPriceData[]~
+        -fetchDayData(date) Promise~DailyPriceData~
     }
-    class StationLoader {
-        -repository: IStationRepository
-        +load(date: string) Promise~StationStore~
-        +getStationsByProvinceAndProduct(store: StationStore, provinceName: string, productName: string) Station[]
+    class WeeklyAnalyzer {
+        +analyze(data, productId, productName, month) WeeklyData
     }
-    class ReportGenerator {
-        -HIGHWAY_KEYWORDS: string[]
-        +generate(store: StationStore, date: string, mode: ReportMode) ReportData
-        -deduplicateByLocation(stations: Station[]) Station[]
-        -filterHighway(stations: Station[]) Station[]
-        -calculateAverage(stations: Station[]) number
-        -getTopN(stations: Station[], n: number, order: string) Station[]
+    class FileCacheStore {
+        -cache: Map
+        -dirty: boolean
+        +get(date, key) DailyPriceData
+        +set(date, key, data) void
+        +has(date, key) boolean
+        +flush() void
     }
-    class ReportFormatter {
-        +format(data: ReportData) string
-        +formatPages(data: ReportData) string[]
-        -formatEntry(entry: ReportEntry) string[]
-        -formatStations(stations: Station[]) string[]
-        -formatMode(mode: string) string
-    }
-    class ReportWriter {
+    class ChartWriter {
         -outputDir: string
-        +write(text: string, date: string, mode: string, save: boolean) void
-        -saveToFile(text: string, date: string, mode: string) void
-    }
-    class StationStore {
-        <<type>>
-        Map~string, Map~string, Station[]~~
-    }
-    class NoDataAvailableError {
-        <<exception>>
-        +name: string
-        +constructor(date: string)
+        +write(content, productName, month) void
+        -buildFilename(productName, month) string
     }
 
-    IDataFetcher <|.. ApiDataFetcher : implements
-    IStationParser <|.. StationParser : implements
-    IStationRepository <|.. StationRepository : implements
-    IStationLoader <|.. StationLoader : implements
-    IReportGenerator <|.. ReportGenerator : implements
-    IReportFormatter <|.. ReportFormatter : implements
-    IReportWriter <|.. ReportWriter : implements
+    IChartRenderer <|.. AsciiChartRenderer : implements
+    IChartRenderer <|.. DotPlotRenderer : implements
+    IChartRenderer <|.. LineChartRenderer : implements
+    IChartRenderer <|.. SvgChartGenerator : implements
+    IWeeklyDataFetcher <|.. WeeklyDataFetcher : implements
+    IWeeklyAnalyzer <|.. WeeklyAnalyzer : implements
+    ICacheStore <|.. FileCacheStore : implements
+    IChartWriter <|.. ChartWriter : implements
 
-    StationRepository "1" --> "1" IDataFetcher : uses
-    StationRepository "1" --> "1" IStationParser : uses
-    StationLoader "1" --> "1" IStationRepository : uses
-    StationLoader ..> StationStore : produces
-    ApiDataFetcher ..> NoDataAvailableError : throws
-    StationParser ..> Station : produces
-    ReportGenerator ..> ReportData : produces
-    ReportFormatter ..> ReportData : reads
-    ReportWriter ..> string : writes
-
-    AnalyzerFactory ..> IDataFetcher : creates
-    AnalyzerFactory ..> IStationParser : creates
-    AnalyzerFactory ..> IStationRepository : creates
-    AnalyzerFactory ..> IStationLoader : creates
-    AnalyzerFactory ..> IReportGenerator : creates
-    AnalyzerFactory ..> IReportFormatter : creates
-    AnalyzerFactory ..> IReportWriter : creates
+    WeeklyDataFetcher "1" --> "1" ICacheStore : uses
+    AnalyzerFactory ..> IChartRenderer : creates
+    AnalyzerFactory ..> IWeeklyDataFetcher : creates
+    AnalyzerFactory ..> IWeeklyAnalyzer : creates
+    AnalyzerFactory ..> ICacheStore : creates
+    AnalyzerFactory ..> IChartWriter : creates
 ```
 
 ### Data flow
@@ -547,6 +622,33 @@ CLI (index.ts)
     │       └── reports/report-DD-MM-YYYY-{mode}.txt
     │
     └── paginateReport(pages) → interactive console
+
+  [--charts flag]
+    │
+    ├── selectChartStyle() → IChartRenderer
+    │
+    └── per product (2 iterations):
+          ├── WeeklyDataFetcher.fetchLastDays(30)
+          │       ├── FileCacheStore.get() → cache hit → DailyPriceData
+          │       └── GET /FiltroProducto/{date}/{productId} → cache miss
+          │               └── filter by province.apiName in memory
+          │               └── FileCacheStore.set() + flush()
+          │
+          ├── WeeklyAnalyzer.analyze()
+          │       ├── group DailyPriceData by dayOfWeek
+          │       └── calculate average per day across all provinces
+          │       └── WeeklyData { averagesByDay, sampleCount }
+          │
+          ├── IChartRenderer.render({ weekly, daily })
+          │       ├── AsciiChartRenderer → horizontal bar chart string
+          │       ├── DotPlotRenderer    → dot plot string
+          │       └── LineChartRenderer  → 30-day time series string
+          │
+          ├── SvgChartGenerator.render({ weekly, daily })
+          │       └── pure SVG bar chart string
+          │
+          └── ChartWriter.write()
+                  └── charts/chart-{slug}-{month}.svg
 ```
 
 ---
@@ -556,6 +658,9 @@ CLI (index.ts)
 ```
 AB-HHM-U20/
 ├── .devcontainer/                  # Docker + VSCode container config
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  # GitHub Actions CI — runs npm test on push
 ├── DataReader/                     # Base example provided by MSMK (unmodified)
 ├── FuelPriceAnalyzer/              # Main project
 │   ├── src/
@@ -569,9 +674,18 @@ AB-HHM-U20/
 │   │   ├── ReportGenerator.ts      # Calculates averages and top 5
 │   │   ├── ReportFormatter.ts      # Formats report for display
 │   │   ├── ReportWriter.ts         # Saves report to file
+│   │   ├── WeeklyDataFetcher.ts    # Fetches last 30 days in batches (Cache-Aside)
+│   │   ├── WeeklyAnalyzer.ts       # Groups daily data by day of week
+│   │   ├── FileCacheStore.ts       # JSON file cache for daily price data
+│   │   ├── AsciiChartRenderer.ts   # Horizontal bar chart (Strategy)
+│   │   ├── DotPlotRenderer.ts      # Dot plot chart (Strategy)
+│   │   ├── LineChartRenderer.ts    # 30-day time series line chart (Strategy)
+│   │   ├── SvgChartGenerator.ts    # Pure SVG bar chart generator
+│   │   ├── ChartWriter.ts          # Saves SVG charts to disk
 │   │   ├── cli/
 │   │   │   ├── prompt.ts           # Interactive mode selection and pagination
-│   │   │   └── summary.ts          # Summary mode output
+│   │   │   ├── summary.ts          # Summary mode output
+│   │   │   └── chartPrompt.ts      # Chart style selector and month argument parser
 │   │   ├── errors/
 │   │   │   └── NoDataAvailableError.ts
 │   │   ├── interfaces/
@@ -581,12 +695,18 @@ AB-HHM-U20/
 │   │   │   ├── IStationLoader.ts
 │   │   │   ├── IReportGenerator.ts
 │   │   │   ├── IReportFormatter.ts
-│   │   │   └── IReportWriter.ts
+│   │   │   ├── IReportWriter.ts
+│   │   │   ├── IChartRender.ts     # ChartInput type + IChartRenderer interface
+│   │   │   ├── ICacheStore.ts
+│   │   │   ├── IWeeklyDataFetcher.ts
+│   │   │   ├── IWeeklyAnalyzer.ts
+│   │   │   └── IChartWriter.ts
 │   │   ├── types/
 │   │   │   ├── raw.ts              # Raw API response types
 │   │   │   ├── station.ts          # Clean internal domain model
 │   │   │   ├── stationStore.ts     # In-memory store type
-│   │   │   └── report.ts           # Report types and ReportMode
+│   │   │   ├── report.ts           # Report types and ReportMode
+│   │   │   └── weekly.ts           # DailyPriceData, WeeklyData, DayOfWeek
 │   │   └── utils/
 │   │       └── date.ts             # Date formatting utilities
 │   ├── tests/
@@ -596,7 +716,11 @@ AB-HHM-U20/
 │   │   ├── ReportFormatter.test.ts
 │   │   ├── Config.test.ts
 │   │   ├── AnalyzerFactory.test.ts
-│   │   └── NoDataAvailableError.test.ts
+│   │   ├── NoDataAvailableError.test.ts
+│   │   ├── WeeklyAnalyzer.test.ts
+│   │   ├── FileCacheStore.test.ts
+│   │   ├── AsciiChartRenderer.test.ts
+│   │   └── SvgChartGenerator.test.ts
 │   ├── package.json
 │   └── tsconfig.json
 ├── .gitignore
@@ -625,87 +749,29 @@ npm test
 Current test results:
 
 ```
-PASS  tests/StationParser.test.ts
-  ✓ Filters out stations with empty price
-  ✓ Parses PrecioProducto string with comma to number
-  ✓ Parses Latitud string with comma to number
-  ✓ Trims trailing whitespace from Localidad
-  ✓ Propagates Fecha from root object to each station
-  ✓ ParseSpanishFloat throws error on invalid number format
-
-PASS  tests/StationLoader.test.ts
-  ✓ Loads all province/product combinations into memory
-  ✓ Builds correct nested map structure
-  ✓ getStationsByProvinceAndProduct returns correct stations
-  ✓ Returns empty array for unknown province
-  ✓ Returns null when no data available
-
-PASS  tests/ReportGenerator.test.ts
-  ✓ Generates one entry per province/product combination
-  ✓ Calculates correct average price
-  ✓ Returns top 5 cheapest sorted ascending
-  ✓ Returns top 5 most expensive sorted descending
-  ✓ Deduplicates stations with same address and locality
-  ✓ Excludes highway stations in no-highway mode
-  ✓ Includes highway stations in all mode
-  ✓ Propagates date and mode to ReportData
-  ✓ Returns empty entries when store has no data
-  ✓ Average price with single station equals station price
-
-PASS  tests/ReportFormatter.test.ts
-  ✓ Format includes date in header
-  ✓ Format includes mode in header
-  ✓ Format includes province and product
-  ✓ Format includes average price
-  ✓ Format includes cheapest station name
-  ✓ Format includes most expensive station name
-  ✓ Format no-highway mode shows correct label
-  ✓ formatPages returns one page per entry
-  ✓ formatPages each page contains entry province
-  ✓ formatPages each page contains report header
-
-PASS  tests/Config.test.ts
-  ✓ getInstance returns the same instance every time
-  ✓ Provinces contains all four required provinces
-  ✓ Products contains Gasolina 95 E5 and Gasoleo A habitual
-  ✓ Madrid province has correct ID
-  ✓ Gasolina 95 E5 has correct product ID
-
-PASS  tests/AnalyzerFactory.test.ts
-  ✓ createFetcher returns object with fetch method
-  ✓ createParser returns object with parse method
-  ✓ createRepository returns object with getByProvinceAndProduct method
-  ✓ createLoader returns object with load method
-  ✓ createGenerator returns object with generate method
-  ✓ createFormatter returns object with format method
-  ✓ createWriter returns object with write method
-  ✓ createLoader returns new instance each call
-
-PASS  tests/NoDataAvailableError.test.ts
-  ✓ Has correct error name
-  ✓ Message contains the date
-  ✓ Message mentions API delay
-  ✓ Is instance of Error
-  ✓ Is instance of NoDataAvailableError
-
-Test Suites: 7 passed, 7 total
-Tests:       49 passed, 49 total
+Test Suites: 11 passed, 11 total
+Tests:       83 passed, 83 total
 ```
 
 ### Test strategy
 
-| Class                  | Test type                 | Reason                                           |
-| ---------------------- | ------------------------- | ------------------------------------------------ |
-| `StationParser`        | Unit test                 | Pure logic, no external dependencies             |
-| `StationLoader`        | Unit test with Jest mocks | Depends on `IStationRepository` — mocked         |
-| `ReportGenerator`      | Unit test                 | Pure calculation logic, no external dependencies |
-| `ReportFormatter`      | Unit test                 | Pure formatting logic, no external dependencies  |
-| `Config`               | Unit test                 | Singleton behaviour verification                 |
-| `AnalyzerFactory`      | Unit test                 | Factory method contract verification             |
-| `NoDataAvailableError` | Unit test                 | Custom error class verification                  |
-| `ApiDataFetcher`       | Integration test (future) | Depends on Ministry REST API                     |
-| `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`   |
-| `ReportWriter`         | Integration test (future) | Depends on file system                           |
+| Class                  | Test type                 | Reason                                                        |
+| ---------------------- | ------------------------- | ------------------------------------------------------------- |
+| `StationParser`        | Unit test                 | Pure logic, no external dependencies                          |
+| `StationLoader`        | Unit test with Jest mocks | Depends on `IStationRepository` — mocked                      |
+| `ReportGenerator`      | Unit test                 | Pure calculation logic, no external dependencies              |
+| `ReportFormatter`      | Unit test                 | Pure formatting logic, no external dependencies               |
+| `Config`               | Unit test                 | Singleton behaviour verification                              |
+| `AnalyzerFactory`      | Unit test                 | Factory method contract verification — all 15 factory methods |
+| `NoDataAvailableError` | Unit test                 | Custom error class verification                               |
+| `WeeklyAnalyzer`       | Unit test                 | Pure aggregation logic — day-of-week grouping and averaging   |
+| `FileCacheStore`       | Unit test                 | Cache read/write/persist logic with temp directory            |
+| `AsciiChartRenderer`   | Unit test                 | Pure rendering logic — output string verification             |
+| `SvgChartGenerator`    | Unit test                 | Pure SVG generation — markup structure verification           |
+| `ApiDataFetcher`       | Integration test (future) | Depends on Ministry REST API                                  |
+| `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`                |
+| `ReportWriter`         | Integration test (future) | Depends on file system                                        |
+| `WeeklyDataFetcher`    | Integration test (future) | Depends on Ministry REST API and `ICacheStore`                |
 
 ---
 
@@ -725,23 +791,23 @@ Ministerio para la Transición Ecológica y el Reto Demográfico (2026)
 _Servicio REST de Precios de Carburantes — Documentación de operaciones_.
 Available at:
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/help
-(Accessed: 13 May 2026).
+(Accessed: 23 May 2026).
 
 Ministerio para la Transición Ecológica y el Reto Demográfico (2026)
 _Listado de productos petrolíferos_. Available at:
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/Listados/ProductosPetroliferos/
-(Accessed: 13 May 2026).
+(Accessed: 23 May 2026).
 
 Ministerio para la Transición Ecológica y el Reto Demográfico (2026)
 _Listado de provincias_. Available at:
 https://energia.serviciosmin.gob.es/ServiciosRestCarburantes/PreciosCarburantes/Listados/Provincias/
-(Accessed: 13 May 2026).
+(Accessed: 23 May 2026).
 
 Meta Platforms (2026) _Jest: JavaScript Testing Framework_. Available at:
-https://jestjs.io/docs/getting-started (Accessed: 13 May 2026).
+https://jestjs.io/docs/getting-started (Accessed: 23 May 2026).
 
 Microsoft (2026) _TypeScript Documentation_. Available at:
-https://www.typescriptlang.org/docs/ (Accessed: 13 May 2026).
+https://www.typescriptlang.org/docs/ (Accessed: 23 May 2026).
 
 Conventional Commits (2024) _Conventional Commits specification v1.0.0_.
-Available at: https://www.conventionalcommits.org (Accessed: 13 May 2026).
+Available at: https://www.conventionalcommits.org (Accessed: 23 May 2026).
