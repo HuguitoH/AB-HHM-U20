@@ -1,6 +1,5 @@
-import type { IChartRenderer } from "./interfaces/IChartRender.js";
+import type { ChartInput, IChartRenderer } from "./interfaces/IChartRender.js";
 import type { DayOfWeek, WeeklyData } from "./types/weekly.js";
-
 /**
  * Generates SVG bar chart markup for weekly price data.
  * Strategy Pattern: implements IChartRenderer alongside ASCII renderers.
@@ -39,8 +38,10 @@ export class SvgChartGenerator implements IChartRenderer {
 
   /**
    * Renders weekly price data as an SVG bar chart string.
+   * Uses weekly averages from ChartInput.
    */
-  render(data: WeeklyData): string {
+  render(input: ChartInput): string {
+    const data = input.weekly;
     const prices = SvgChartGenerator.DAY_ORDER.map(
       (d) => data.averagesByDay[d] ?? 0,
     );
