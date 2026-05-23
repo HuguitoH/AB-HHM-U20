@@ -14,10 +14,10 @@ export class Config {
   // Provinces and products of interest for the company.
   // To add a new province or product, only this file needs to change (Open/Closed Principle).
   readonly provinces = [
-    { name: "Madrid", id: "28" },
-    { name: "A Coruña", id: "15" },
-    { name: "Tenerife", id: "38" },
-    { name: "Badajoz", id: "06" },
+    { name: "Madrid", id: "28", apiName: "MADRID" },
+    { name: "A Coruña", id: "15", apiName: "CORUÑA (A)" },
+    { name: "Tenerife", id: "38", apiName: "SANTA CRUZ DE TENERIFE" },
+    { name: "Badajoz", id: "06", apiName: "BADAJOZ" },
   ] as const;
 
   readonly products = [
