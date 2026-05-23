@@ -1,15 +1,23 @@
-import type { WeeklyData } from "../types/weekly.js";
+import type { DailyPriceData, WeeklyData } from "../types/weekly.js";
 
 /**
- * Abstraction for rendering weekly data as a visual chart.
- * Implemented by AsciiChartRenderer (CLI) and SvgChartGenerator (image).
- * Strategy Pattern: both implementations are interchangeable.
+ * Input data for chart renderers.
+ * Weekly data for bar/dot renderers, daily data for line chart.
+ */
+export interface ChartInput {
+  weekly: WeeklyData;
+  daily: DailyPriceData[];
+}
+
+/**
+ * Abstraction for rendering chart data.
+ * Strategy Pattern: each renderer decides internally how to use the input.
+ * Dependency Inversion: consumers depend on this interface only.
  */
 export interface IChartRenderer {
   /**
-   * Renders weekly price data as a chart string.
-   * For ASCII: returns terminal-ready string.
-   * For SVG: returns SVG markup string.
+   * Renders chart data into a displayable string.
+   * @param input - Combined weekly and daily data
    */
-  render(data: WeeklyData): string;
+  render(input: ChartInput): string;
 }
