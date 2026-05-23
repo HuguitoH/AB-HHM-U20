@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   const showCharts = args.includes("--charts");
 
   if (showCharts) {
-    await runChartMode(args);
+    await runChartsMode(args);
     return;
   }
 
