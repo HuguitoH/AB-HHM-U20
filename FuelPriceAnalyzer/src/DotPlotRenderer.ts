@@ -1,6 +1,5 @@
-import type { IChartRenderer } from "./interfaces/IChartRender.js";
-import type { DayOfWeek, WeeklyData } from "./types/weekly.js";
-
+import type { ChartInput, IChartRenderer } from "./interfaces/IChartRender.js";
+import type { DayOfWeek } from "./types/weekly.js";
 /**
  * Renders weekly price data as a dot plot for terminal display.
  * Each day is represented by a dot positioned vertically by price.
@@ -25,8 +24,10 @@ export class DotPlotRenderer implements IChartRenderer {
 
   /**
    * Renders weekly price data as a dot plot string.
+   * Uses weekly averages from ChartInput.
    */
-  render(data: WeeklyData): string {
+  render(input: ChartInput): string {
+    const data = input.weekly;
     const lines: string[] = [];
     const prices = DotPlotRenderer.DAY_ORDER.map(
       (d) => data.averagesByDay[d] ?? 0,

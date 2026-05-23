@@ -1,5 +1,5 @@
-import type { IChartRenderer } from "./interfaces/IChartRender.js";
-import type { DayOfWeek, WeeklyData } from "./types/weekly.js";
+import type { ChartInput, IChartRenderer } from "./interfaces/IChartRender.js";
+import type { DayOfWeek } from "./types/weekly.js";
 
 /**
  * Renders weekly price data as vertical ASCII bar charts.
@@ -21,39 +21,45 @@ export class AsciiChartRenderer implements IChartRenderer {
 
   /**
    * Renders weekly price data as a vertical bar chart string.
+   * Uses weekly averages from ChartInput.
    */
-  render(data: WeeklyData): string {
+  render(input: ChartInput): string {
+    const data = input.weekly;
     const lines: string[] = [];
+
     const prices = AsciiChartRenderer.DAY_ORDER.map(
       (d) => data.averagesByDay[d] ?? 0,
     );
     const validPrices = prices.filter((p) => p > 0);
 
-    if (validPrices.length === 0) {
-      return "  No data available for this period.";
-    }
+    if (validPrices.length === 0) return "  No data available for this period.";
 
     const min = Math.min(...validPrices);
     const max = Math.max(...validPrices);
 
     lines.push("=".repeat(60));
     lines.push(`  WEEKLY CHART — ${data.productName} — ${data.month}`);
-    lines.push(`  Mode: Vertical bars`);
+    lines.push(`  Mode: Horizontal bars`);
     lines.push("=".repeat(60));
     lines.push("");
+    lines.push(`  Day  |${"".padEnd(24)}| Price`);
+    lines.push(`  -----|${"".padEnd(24, "-")}|-------`);
 
-    // Build chart rows top to bottom
-    const rows = this.buildRows(prices, min, max);
-    for (const row of rows) {
-      lines.push(row);
-    }
+    AsciiChartRenderer.DAY_ORDER.forEach((day, i) => {
+      const price = prices[i] ?? 0;
+      if (price === 0) {
+        lines.push(`  ${day}  |${"".padEnd(24)}| no data`);
+        lines.push(""); // ← línea vacía entre días
+        return;
+      }
+      const bar = this.buildBar(price, min, max);
+      lines.push(`  ${day}  |${bar}| ${price.toFixed(3)} €/L`);
+      lines.push(""); // ← línea vacía entre días
+    });
 
-    // X axis
-    lines.push("        " + "     +" + "-".repeat(29));
-    lines.push("          Mon  Tue  Wed  Thu  Fri  Sat  Sun");
+    lines.push(`  -----|${"".padEnd(24, "-")}|-------`);
     lines.push("");
 
-    // Summary
     const minDay = AsciiChartRenderer.DAY_ORDER[prices.indexOf(min)] ?? "?";
     const maxDay = AsciiChartRenderer.DAY_ORDER[prices.indexOf(max)] ?? "?";
     lines.push(
@@ -64,32 +70,14 @@ export class AsciiChartRenderer implements IChartRenderer {
     return lines.join("\n");
   }
 
-  /**
-   * Builds chart rows from top to bottom.
-   * Each row represents a price level — filled with █ if bar reaches that level.
-   */
-  private buildRows(prices: number[], min: number, max: number): string[] {
-    const rows: string[] = [];
+  private static readonly BAR_WIDTH = 24;
+  private static readonly BAR_CHAR = "█";
+
+  private buildBar(value: number, min: number, max: number): string {
     const range = max - min || 1;
-
-    for (let row = AsciiChartRenderer.CHART_HEIGHT; row >= 1; row--) {
-      const threshold = min + (range * row) / AsciiChartRenderer.CHART_HEIGHT;
-      const label =
-        row === AsciiChartRenderer.CHART_HEIGHT
-          ? `  ${max.toFixed(3)} |`
-          : row === Math.ceil(AsciiChartRenderer.CHART_HEIGHT / 2)
-            ? `  ${((min + max) / 2).toFixed(3)} |`
-            : row === 1
-              ? `  ${min.toFixed(3)} |`
-              : "          |";
-
-      const bars = prices
-        .map((price) => (price >= threshold ? "  █  " : "     "))
-        .join("");
-
-      rows.push(`${label}${bars}`);
-    }
-
-    return rows;
+    const ratio = (value - min) / range;
+    const filled = Math.round(ratio * AsciiChartRenderer.BAR_WIDTH);
+    const empty = AsciiChartRenderer.BAR_WIDTH - filled;
+    return "█".repeat(filled) + " ".repeat(empty);
   }
 }
