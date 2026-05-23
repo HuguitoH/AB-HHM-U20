@@ -21,3 +21,6 @@ reports/
 
 # Price cache
 cache/
+
+# Generated charts
+charts/
