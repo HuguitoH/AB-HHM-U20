@@ -1,7 +1,5 @@
 import { createInterface } from "node:readline";
-import { AsciiChartRenderer } from "../AsciiChartRenderer.js";
-import { DotPlotRenderer } from "../DotPlotRenderer.js";
-import { LineChartRenderer } from "../LineChartRenderer.js";
+import { AnalyzerFactory } from "../AnalyzerFactory.js";
 import type { IChartRenderer } from "../interfaces/IChartRender.js";
 
 /**
@@ -30,13 +28,13 @@ export async function selectChartStyle(): Promise<IChartRenderer> {
 
         if (input === "1") {
           rl.close();
-          resolve(new AsciiChartRenderer());
+          resolve(AnalyzerFactory.createBarChartRenderer());
         } else if (input === "2") {
           rl.close();
-          resolve(new DotPlotRenderer());
+          resolve(AnalyzerFactory.createDotPlotRenderer());
         } else if (input === "3") {
           rl.close();
-          resolve(new LineChartRenderer());
+          resolve(AnalyzerFactory.createLineChartRenderer());
         } else {
           console.log("\n  Invalid option. Please enter 1, 2 or 3.\n");
           ask();

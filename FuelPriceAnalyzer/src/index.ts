@@ -1,14 +1,9 @@
 import { AnalyzerFactory } from "./AnalyzerFactory.js";
-import { ChartWriter } from "./ChartWriter.js";
 import { parseMonthArg, selectChartStyle } from "./cli/chartPrompt.js";
 import { paginateReport, selectReportMode } from "./cli/prompt.js";
 import { printSummary } from "./cli/summary.js";
 import { PRODUCTS } from "./config.js";
-import { FileCacheStore } from "./FileCacheStore.js";
-import { SvgChartGenerator } from "./SvgChartGenerator.js";
 import { parseDateArg } from "./utils/date.js";
-import { WeeklyAnalyzer } from "./WeeklyAnalyzer.js";
-import { WeeklyDataFetcher } from "./WeeklyDataFetcher.js";
 
 /**
  * Entry point for the CLI.
@@ -77,26 +72,18 @@ async function runChartsMode(args: string[]): Promise<void> {
 
   console.log(`\nFuel Price Analyzer — Weekly Charts — ${month}\n`);
 
-  // Select chart style interactively
   const renderer = await selectChartStyle();
-
-  const analyzer = new WeeklyAnalyzer();
-  const svgGen = new SvgChartGenerator();
-  const chartWriter = new ChartWriter();
-
+  const analyzer = AnalyzerFactory.createWeeklyAnalyzer();
+  const svgGen = AnalyzerFactory.createSvgGenerator();
+  const chartWriter = AnalyzerFactory.createChartWriter();
   const pages: string[] = [];
 
   console.log("");
 
   for (const product of PRODUCTS) {
-    // Load cache for this product
-    const cache = new FileCacheStore(product.id);
-    const fetcher = new WeeklyDataFetcher(cache);
-
-    // Fetch last 30 days
+    const fetcher = AnalyzerFactory.createWeeklyFetcher(product.id);
     const dailyData = await fetcher.fetchLastDays(30);
 
-    // Analyse weekly averages
     const weeklyData = analyzer.analyze(
       dailyData,
       product.id,
@@ -104,17 +91,15 @@ async function runChartsMode(args: string[]): Promise<void> {
       month,
     );
 
-    // Render CLI chart page
-    pages.push(renderer.render(weeklyData));
+    const input = { weekly: weeklyData, daily: dailyData };
 
-    // Always generate SVG image
-    const svg = svgGen.render(weeklyData);
+    pages.push(renderer.render(input));
+
+    const svg = svgGen.render(input);
     chartWriter.write(svg, product.name, month);
   }
 
   console.log("");
-
-  // Paginate CLI charts
   await paginateReport(pages);
 }
 
