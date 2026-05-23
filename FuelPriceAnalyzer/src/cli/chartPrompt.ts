@@ -18,7 +18,7 @@ export async function selectChartStyle(): Promise<IChartRenderer> {
   return new Promise((resolve) => {
     const ask = () => {
       console.log("  Chart style:");
-      console.log("  [1] Vertical bars  — compare prices day by day");
+      console.log("  [1] Horizontal bars  — compare prices day by day");
       console.log("  [2] Dot plot       — see price spread across the week");
       console.log("  [3] Line chart     — see weekly trend");
       console.log("");
