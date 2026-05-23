@@ -14,6 +14,7 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@types/asciichart": "^1.5.8",
     "@types/jest": "^29.5.0",
     "@types/node": "^25.4.0",
     "jest": "^29.7.0",
@@ -22,30 +23,41 @@
     "typescript": "^5.9.3"
   },
   "jest": {
-  "preset": "ts-jest/presets/default-esm",
-  "testEnvironment": "node",
-  "extensionsToTreatAsEsm": [".ts"],
-  "transform": {
-    "^.+\\.ts$": ["ts-jest", {
-      "useESM": true,
-      "tsconfig": {
-        "module": "nodenext",
-        "moduleResolution": "nodenext",
-        "target": "es2022",
-        "strict": true,
-        "esModuleInterop": true,
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "moduleDetection": "force",
-        "skipLibCheck": true,
-        "noUncheckedIndexedAccess": true,
-        "exactOptionalPropertyTypes": true,
-        "types": ["node", "jest"]
-      }
-    }]
+    "preset": "ts-jest/presets/default-esm",
+    "testEnvironment": "node",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true,
+          "tsconfig": {
+            "module": "nodenext",
+            "moduleResolution": "nodenext",
+            "target": "es2022",
+            "strict": true,
+            "esModuleInterop": true,
+            "resolveJsonModule": true,
+            "isolatedModules": true,
+            "moduleDetection": "force",
+            "skipLibCheck": true,
+            "noUncheckedIndexedAccess": true,
+            "exactOptionalPropertyTypes": true,
+            "types": [
+              "node",
+              "jest"
+            ]
+          }
+        }
+      ]
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    }
   },
-  "moduleNameMapper": {
-    "^(\\.{1,2}/.*)\\.js$": "$1"
+  "dependencies": {
+    "asciichart": "^1.5.25"
   }
-}
 }
