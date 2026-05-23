@@ -118,7 +118,7 @@ export class WeeklyDataFetcher implements IWeeklyDataFetcher {
         for (const province of PROVINCES) {
           const stations = raw.ListaEESSPrecio.filter(
             (s) =>
-              s.Provincia.trim() === province.name.toUpperCase() &&
+              s.Provincia.trim().toUpperCase() === province.apiName &&
               s.PrecioProducto !== "",
           );
 
