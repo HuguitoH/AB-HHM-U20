@@ -27,6 +27,7 @@ practices (Martin, 2009) applied throughout the codebase.
   - [Testing](#testing)
     - [Writing new tests](#writing-new-tests)
     - [Testing strategy](#testing-strategy)
+  - [| `LineChartRenderer` | Unit test | Pure rendering logic |](#-linechartrenderer---unit-test--pure-rendering-logic--------------)
   - [Contribution Workflow](#contribution-workflow)
   - [Commit Guidelines](#commit-guidelines)
   - [References](#references)
@@ -256,6 +257,8 @@ test("calculates correct average for Tuesday with multiple weeks", () => {
 | `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`                |
 | `ReportWriter`         | Integration test (future) | Depends on file system                                        |
 | `WeeklyDataFetcher`    | Integration test (future) | Depends on Ministry REST API and `ICacheStore`                |
+| `DotPlotRenderer`      | Unit test                 | Pure rendering logic                                          |
+| `LineChartRenderer`    | Unit test                 | Pure rendering logic                                          |
 
 ---
 

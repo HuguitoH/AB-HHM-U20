@@ -1,7 +1,7 @@
 # Fuel Price Analyzer
 
 ![Milestone](https://img.shields.io/badge/milestone-3%20complete-brightgreen)
-![Tests](https://img.shields.io/badge/tests-83%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-72%20passed-brightgreen)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 ![Node](https://img.shields.io/badge/Node-24--alpine-green)
 ![CI](https://github.com/HuguitoH/AB-HHM-U20/actions/workflows/ci.yml/badge.svg)
@@ -57,7 +57,7 @@ y el Reto Demográfico, 2026).
 
 The company has presence in the following provinces and fuel types:
 
-``` mermaid
+```mermaid
 graph TD
     A[Company Coverage] --> B[Provinces]
     A --> C[Fuels]
@@ -749,8 +749,8 @@ npm test
 Current test results:
 
 ```
-Test Suites: 11 passed, 11 total
-Tests:       83 passed, 83 total
+Test Suites: 13 passed, 13 total
+Tests:       72 passed, 72 total
 ```
 
 ### Test strategy
@@ -772,6 +772,8 @@ Tests:       83 passed, 83 total
 | `StationRepository`    | Integration test (future) | Depends on `IDataFetcher` and `IStationParser`                |
 | `ReportWriter`         | Integration test (future) | Depends on file system                                        |
 | `WeeklyDataFetcher`    | Integration test (future) | Depends on Ministry REST API and `ICacheStore`                |
+| `DotPlotRenderer`      | Unit test                 | Pure rendering logic                                          |
+| `LineChartRenderer`    | Unit test                 | Pure rendering logic                                          |
 
 ---
 
