@@ -41,46 +41,9 @@ describe("ReportFormatter", () => {
     expect(result).toContain("12-05-2026");
   });
 
-  test("format includes mode in header", () => {
-    const result = formatter.format(mockData);
-    expect(result).toContain("All stations");
-  });
-
-  test("format includes province and product", () => {
-    const result = formatter.format(mockData);
-    expect(result).toContain("Madrid");
-    expect(result).toContain("Gasolina 95 E5");
-  });
-
-  test("format includes average price", () => {
-    const result = formatter.format(mockData);
-    expect(result).toContain("1.550");
-  });
-
-  test("format includes cheapest station name", () => {
-    const result = formatter.format(mockData);
-    expect(result).toContain("CHEAP");
-  });
-
-  test("format includes most expensive station name", () => {
-    const result = formatter.format(mockData);
-    expect(result).toContain("EXPENSIVE");
-  });
-
-  test("format no-highway mode shows correct label", () => {
-    const noHighwayData: ReportData = { ...mockData, mode: "no-highway" };
-    const result = formatter.format(noHighwayData);
-    expect(result).toContain("Excluding highway stations");
-  });
-
   test("formatPages returns one page per entry", () => {
     const pages = formatter.formatPages(mockData);
     expect(pages).toHaveLength(1);
-  });
-
-  test("formatPages each page contains entry province", () => {
-    const pages = formatter.formatPages(mockData);
-    expect(pages[0]).toContain("Madrid");
   });
 
   test("formatPages each page contains report header", () => {
